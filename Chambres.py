@@ -7,6 +7,13 @@ import random
 class Room :
     """Classe qui définit les pièces du jeu."""
     
+    possible = ["Commissary", "Kitchen", "Locksmith", "Laundry Room", "Bookshop", "The Armory", "Showroom", "Mount Holly Gift Shop",
+                "Terrace", "Patio", "Courtyard", "Cloister", "Veranda", "Greenhouse", "Morning Room", "Secret Garden",
+                "Bedroom", "Boudoir", "Guest Bedroom", "Nursery", "Servant's Quarters", "Bunk Room", "Her Ladyship's Chamber", "Master Bedroom",
+                "Hallway", "West Wing Hall", "East Wing Hall", "Corridor", "Passageway", "Secret Passage", "Foyer", "Great Hall",
+                "Lavatory", "Chapel", "Maid's Chamber", "Archives", "Gymnasium", "Darkroom", "Weight Room", "Furnace",
+                "The Foundation", "Entrance Hall", "Spare Room", "Rotunda", "Parlor", "Billiard Room", "Gallery", "Room 8", "Closet", "Walk-in Closet", "Attic", "Storeroom", "Nook", "Garage", "Music Room", "Locker Room", "Den", "Wine Cellar", "Trophy Room", "Ballroom", "Pantry", "Rumpus Room", "Vault", "Office", "Drawing Room", "Study", "Library", "Chamber of Mirrors", "The Pool", "Drafting Studio", "Utility Closet", "Boiler Room", "Pump Room", "Security", "Workshop", "Laboratory", "Sauna", "Coat Check", "Mail Room", "Freezer", "Dining Room", "Observatory", "Conference Room", "Aquarium", "Antechamber", "Room 46"]
+    
 
     def __init__(self, name : str, color : str):
         self.name = name
@@ -14,6 +21,16 @@ class Room :
         self.visited = False # False si la pièce n'a pas encore été visité, True sinon
         self.doors = [] # Liste des pièces qui peuvent être accédées à travers la pièce actuelle
     
+    @property
+    def name(self):
+        return self.__name
+    
+    @name.setter
+    def name(self,name):
+        if name not in Room.possible:
+            raise ValueError("Ce n'est pas un objet")
+        self.__name = name
+
     @abstractmethod
     def enter_room(self, inventory : Inventory):
         """Ajoute des effets lorsque le joueur rentre dans la pièce"""

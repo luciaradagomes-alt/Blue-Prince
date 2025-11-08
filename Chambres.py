@@ -1,9 +1,11 @@
 #%%
 from inventory import Inventory
 from objet import Objet
+#%%
 from abc import ABC, abstractmethod
 import random
 
+#%%
 class Room :
     """Classe qui définit les pièces du jeu."""
     
@@ -40,7 +42,126 @@ class Room :
         self.doors.append(room)
     def __str__(self):
         return f"{self.name} (pièce {self.color})"
-       
+
+
+class Green(Room):
+    """Ce sont des jardins d'intérieur, qui contiennent souvent des gemmes, des endroits où creuser, et des objets permanents"""
+    
+    rooms = ["Terrace", "Patio", "Courtyard", "Cloister", "Veranda", "Greenhouse", "Morning Room", "Secret Garden"]
+
+    def __init__(self, name:str):
+        super().__init__(name, "vert")
+        self.cost = self.gem_cost()
+        self.dig_spots_available = self.dig_spots()
+        self.gem_bonus = self.gem_bonus()
+        self.permanent_objects = None
+        self.available_items = self.items()
+        
+    def items(self):
+        """Génère les items des pièces"""
+        if self.name == "Terrace":
+            room_items = {"banane": 1, "orange": 1, "gemme":random.randint(1,2), "pièce": 2, "compas":1, "pelle": 1}
+            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
+        elif self.name == "Patio":
+            room_items = {"pomme": 1, "clé": 1, "gemme":random.randint(1,3), "détecteur de métal": 1, "pelle": 1}
+            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
+        elif self.name == "Courtyard":
+            room_items = {"détecteur de métal": 1, "marteau": 1, "pelle": 1}
+            return dict(random.sample(list(room_items.items()), 1)) 
+        elif self.name == "Cloister":
+            room_items = {"gemme":random.randint(1,3)}
+            return room_items
+        elif self.name == "Veranda":
+            room_items = {"détecteur de métal": 1, "marteau": 1, "pelle": 1, "gemme":1}
+            return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
+        elif self.name == "Greenhouse":
+            room_items = {"détecteur de métal": 1, "marteau": 1, "pelle": 1}
+            return dict(random.sample(list(room_items.items()), 1)) 
+        elif self.name == "Morning Room":
+            room_items = {"dé": 2, "patte de lapin": 1, "pelle": 1, "salière": 1, "coin purse":1}
+            return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
+        elif self.name == "Secret Room":
+            room_items = {"détecteur de métal": 1, "pelle": 1, "marteau": 1, "levier cassé":1}
+            return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
+    
+    def dig_spots(self):
+        """Génère des endroits pour creuser selon les pièces"""
+
+        spots = {
+            "Terrace": random.randint(1, 3),
+            "Patio": random.randint(2, 5),
+            "Courtyard": random.randint(2, 3),
+            "Cloister": random.randint(2, 4),
+            "Veranda": random.randint(2, 4),
+            "Greenhouse": random.randint(2, 4),
+            "Morning Room": random.randint(0, 3),
+            "Secret Garden":random.randint(3, 7)
+            }
+        return spots.get(self.name)
+
+    def gem_cost(self):
+        """Génère le coût pour entrer dans chaque pièce"""
+        cost = {
+            "Terrace": 0,
+            "Patio": 1,
+            "Courtyard": 1,
+            "Cloister": 3,
+            "Veranda": 2,
+            "Greenhouse": 1,
+            "Morning Room": 1,
+            "Secret Garden": 0
+            }
+        return cost.get(self.name)
+
+    def gem_bonus(self):
+        """Indique si les pièces apportent un bonus (gemmes) ou pas"""
+        rooms = {
+            "Terrace": (True, random.randint(1, 2)),
+            "Patio": (True, random.randint(1, 3)),
+            "Courtyard": (True, random.randint(1, 2)),
+            "Cloister": (False, 0),
+            "Veranda": (True, 1),
+            "Greenhouse": (False, 0),
+            "Morning Room": (True, 1),
+            "Secret Garden": (False, 0)
+            }
+        return rooms.get(self.name)
+
+    def enter_room(self, inventory : Inventory) :
+        """Interface pour rentrer dans les pièces vertes"""
+        print(f"Vous êtes dans {self.name}")
+        if self.gem_cost>0 :
+            print(f"Coût d'entrée : {self.gem_cost} gemme/s.")
+            if inventory.gems < self.gem_cost :
+                print(f"Vous n'avez pas assez de gemmes. Vous êtes en manque de {self.gem_cost - inventory.gems} gemme/s.")
+                return False
+            print(f"Souhaitez-vous dépenser {self.gem_cost} gemme/s ?")
+
+            response = ''
+            while response != 'o' and response != 'n' :
+                    response = input("\nTapez 'o' pour oui et 'n' pour non : ")
+            response = (response == 'n')
+            if response :
+                print("\nVous ne souhaitez pas explorer la pièce.")
+                return False
+            
+            inventory.gems -= self.gem_cost
+            print(f"Gemmes restantes : {inventory.gems}")
+
+            """if not self.visited :
+                effects = self.apply_special_effects(inventory)"""
+
+            bonus = self.gem_bonus()
+            if bonus > 0:
+                print("Vous avez trouvé {bonus} gemme/s !")
+                inventory.gems += bonus
+                #effects = True
+            
+            
+            
+                
+
+
 class Yellow(Room) :
     """Ce sont des magasins dans lesquels il est possible d'échanger de l'or contre d'autres objets."""
     
@@ -330,4 +451,17 @@ class Yellow(Room) :
                 print("\nAu revoir !")
                 return True
 
+
+#%%
+rooms = {
+            "Terrace": (True, random.randint(1, 2)),
+            "Patio": (True, random.randint(1, 3)),
+            "Courtyard": (True, random.randint(1, 2)),
+            "Cloister": (False, 0),
+            "Veranda": (True, 1),
+            "Greenhouse": (False, 0),
+            "Morning Room": (True, 1),
+            "Secret Garden": (False, 0)
+            } 
+rooms.get("Courtyard")[0]
 # %%

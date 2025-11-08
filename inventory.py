@@ -1,6 +1,7 @@
 import pygame
 from objet import Objet
 import text
+from colorpalet import couleurs
 
 class Inventory:
     """ Classe qui contient les objets dans l'inventaire du joueur.
@@ -31,6 +32,13 @@ class Inventory:
     
     pygame.font.init()
     my_font = text.inventory_font
+    symboles = {"step":pygame.image.load("images\\Steps_icon.webp"),
+                "key":pygame.image.load("images\\key.png"),
+                "coin":pygame.image.load("images\\gold.png"),
+                "gem":pygame.image.load("images\\gem.webp"),
+                "die":pygame.image.load("images\\ivory_dice.png")}
+    for obj in symboles.keys():
+        symboles[obj] = pygame.transform.scale(symboles[obj], (18,18))
 
     def __init__(self):
         self.steps = 70
@@ -43,36 +51,41 @@ class Inventory:
         self.lockpick_kit = False
         self.rabbit_foot = False
         self.metal_detector = False
-        
 
     def show_inventory(self):
         """ Permet d'afficher l'inventaire du joueur sur l'interface graphique
         """
         inventaire = pygame.Surface((500,400))
-        inventaire.fill((14, 27, 49))
-        afficher = ["----------------------------------------------------------------------",
-                    "Inventaire","------------------",
-                    f"Pas : {self.steps}", f"Pièces : {self.coins}", f"Gemmes : {self.gems}",f"Clés : {self.keys}",f"Dés : {self.dice}",""]
+        inventaire.fill(couleurs["darkblue"])
+        pygame.draw.rect(inventaire,couleurs['brightblue'],pygame.Rect(0,0,500,400),width=15)
+        pygame.draw.rect(inventaire,"black",pygame.Rect(0,0,500,400),width=3)
+        
+        afficher = ["Inventaire","--------------------------------------------",
+                    f"   Pas : {self.steps}", f"   Clés : {self.keys}", f"   Pièces : {self.coins}", f"   Gemmes : {self.gems}", f"   Dés : {self.dice}",""]
         if self.shovel:
-            afficher.append("- Pelle")
+            afficher.append(" - Pelle")
         if self.hammer:
-            afficher.append("- Marteau")
+            afficher.append(" - Marteau")
         if self.lockpick_kit:
-            afficher.append("- Kit de crochetage")
+            afficher.append(" - Kit de crochetage")
         if self.rabbit_foot:
-            afficher.append("- Patte de lapin")
+            afficher.append(" - Patte de lapin")
         if self.metal_detector:
-            afficher.append("- Détecteur de métaux")
-        afficher.append(f"----------------------------------------------------------------------")
+            afficher.append(" - Détecteur de métaux")
         
-        text.texte(afficher,inventaire,x=10,y=10,color="white",font=self.my_font)
+        text.texte(afficher,inventaire,x=30,y=30,color="white",font=self.my_font,modifiers={0:'bold'})
         
+        i = 0
+        for s in self.symboles.values():
+            inventaire.blit(s,(34,68+i*19))
+            i += 1
+
         return inventaire
 
     def move(self):
         self.steps -= 1
     
-    def pick_up(self,object,nb=1):
+    def pick_up(self,object,screen,nb=1):
         """ Définit les actions réalisées lorsqu'on ramasse un objet dans le manoir
 
         Parameters:
@@ -89,10 +102,10 @@ class Inventory:
         if type(object) != Objet:
             raise TypeError("Ce n'est pas un objet")
         
-        print(f"-> Trouvé: {nb} {object}", end='')
+        message = f"Trouvé: {nb} {object}"
         if nb != 1:
-            print("s")
-        else: print()
+            message += "s"
+        text.afficher_message_temps(message,screen)
 
         if object.food:
             self.steps += nb*object.steps
@@ -111,18 +124,18 @@ class Inventory:
                 self.dice += nb
 
         if object.locker or object.chest:
-            print(f"Ceci est un {object.name}.", end =' ')
+            message = [f"Ceci est un {object.name}."]
             if self.keys > 0:
                 reponse = ''
                 while reponse != 'o' and reponse != 'n':
-                    print("Voulez-vous l'ouvrir ?", end=" ")
+                    message.append("Voulez-vous l'ouvrir ?")
                     if object.locker or not self.hammer:
-                        print("Cela coûtera 1 clé.")
-                    else:
-                        print()
+                        message.append("Cela coûtera 1 clé.")
+                        text.afficher_message(message,screen)
                     reponse = input("Tapez 'o' pour oui et 'n' pour non : ")
-                reponse = (reponse == 'o') 
-                if reponse:
+                
+                reponse = pygame.event.get()
+                if reponse.key == pygame.K_o:
                     if object.locker or not self.hammer:
                         self.keys -= 1
                     print("Ouvert")
@@ -174,6 +187,17 @@ class Inventory:
             self.metal_detector = True
 
     def buy(self,object):
+        """ Permet au joueur d'acheter un objet, sous condiiton qu'il ait assez de pièces
+
+        Paramètres:
+            object (_type_): _description_
+
+        Raises:
+            TypeError: _description_
+
+        Returns:
+            _type_: _description_
+        """
         if type(object) != Objet:
             raise TypeError("Ce n'est pas un objet")
         

@@ -1,7 +1,7 @@
 import random
 
 class Objet:
-    """ Classe qui définit les objets contenus dans le jeu
+    """ Classe qui définit la nature des objets contenus dans le jeu
 
     Attributes:
     ---------------
@@ -163,16 +163,3 @@ class Objet:
     def __str__(self):
         return self.name
         
-#%%
-# tests
-
-pomme = Objet("pomme")
-#print(f"{pomme.name} : nourriture ? {pomme.food}, stackable ? {pomme.stackable}, nombre de pas : {pomme.steps}")
-
-coffre = Objet("coffre")
-#print(f"{coffre.name} : nourriture ? {coffre.food}, stackable ? {coffre.stackable}, outil nécessaire pour l'ouvrir : {coffre.required_tool}, objets dans le {coffre.name} : {coffre.objects}")
-
-casier = Objet("casier")
-#print(f"{casier.name} : nourriture ? {casier.food}, stackable ? {casier.stackable}, outil nécessaire pour l'ouvrir : {casier.required_tool}, objets dans le {casier.name} : {casier.objects}")
-
-# %%

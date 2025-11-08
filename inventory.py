@@ -1,4 +1,6 @@
+import pygame
 from objet import Objet
+import text
 
 class Inventory:
     """ Classe qui contient les objets dans l'inventaire du joueur.
@@ -27,6 +29,9 @@ class Inventory:
         Indique si le joueur possède un détecteur de métal, qui augmente la chance de trouver des clés ou des pièces d'or dans le manoir
     """
     
+    pygame.font.init()
+    my_font = text.inventory_font
+
     def __init__(self):
         self.steps = 70
         self.coins = 0
@@ -38,33 +43,31 @@ class Inventory:
         self.lockpick_kit = False
         self.rabbit_foot = False
         self.metal_detector = False
+        
 
     def show_inventory(self):
-        """ Permet d'afficher l'inventaire du joueur
+        """ Permet d'afficher l'inventaire du joueur sur l'interface graphique
         """
-    # une fonction pour afficher l'inventaire sur l'interface graphique, à faire avec pygame
-    # nécessitera d'images pour les coins, steps, dice, keys
-    # pour l'instant je vais juste print les valeurs sur la console
-        print(f"----------------------------------------------------------------------")
-        print(f"Inventaire")
-        print(f"------------------")
-        print(f"Pas : {self.steps}")
-        print(f"Pièces : {self.coins}")
-        print(f"Gemmes : {self.gems}")
-        print(f"Clés : {self.keys}")
-        print(f"Dés : {self.dice}")
-        print()
+        inventaire = pygame.Surface((500,400))
+        inventaire.fill((14, 27, 49))
+        afficher = ["----------------------------------------------------------------------",
+                    "Inventaire","------------------",
+                    f"Pas : {self.steps}", f"Pièces : {self.coins}", f"Gemmes : {self.gems}",f"Clés : {self.keys}",f"Dés : {self.dice}",""]
         if self.shovel:
-            print("- Pelle")
+            afficher.append("- Pelle")
         if self.hammer:
-            print("- Marteau")
+            afficher.append("- Marteau")
         if self.lockpick_kit:
-            print("- Kit de crochetage")
+            afficher.append("- Kit de crochetage")
         if self.rabbit_foot:
-            print("- Patte de lapin")
+            afficher.append("- Patte de lapin")
         if self.metal_detector:
-            print("- Détecteur de métaux")
-        print(f"----------------------------------------------------------------------")
+            afficher.append("- Détecteur de métaux")
+        afficher.append(f"----------------------------------------------------------------------")
+        
+        text.texte(afficher,inventaire,x=10,y=10,color="white",font=self.my_font)
+        
+        return inventaire
 
     def move(self):
         self.steps -= 1
@@ -203,41 +206,3 @@ class Inventory:
         if reponse:
             self.keys -= niveau
         
-#tests
-#pomme = Objet('pomme')
-
-inventory = Inventory()
-
-#inventory.show_inventory()
-
-#inventory.pick_up(pomme)
-
-#inventory.show_inventory()
-
-cle = Objet("clé")
-
-inventory.pick_up(cle,4)
-
-casier = Objet("casier")
-
-inventory.pick_up(casier)
-
-inventory.show_inventory()
-
-coffre = Objet("coffre")
-inventory.pick_up(Objet("marteau"))
-inventory.pick_up(coffre)
-
-inventory.show_inventory()
-
-creuse = Objet("endroit creusable")
-
-inventory.pick_up(creuse)
-
-inventory.show_inventory()
-
-pelle = Objet("pelle")
-inventory.pick_up(pelle)
-inventory.pick_up(creuse)
-
-inventory.show_inventory()

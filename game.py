@@ -3,7 +3,7 @@ import text
 from objet import Objet
 from inventory import Inventory
 from chambres import Yellow
-from colorpalet import couleurs
+from colorpalette import couleurs
 
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
@@ -25,6 +25,8 @@ noir = pygame.Surface((1280,720))
 noir.fill([0,0,0])
 noir.set_alpha(10)
 
+mansion = pygame.image.load("images\\mansion.webp").convert()
+mansion = pygame.transform.scale(mansion, (1280, 720))
 
 while running:
 
@@ -60,6 +62,10 @@ while running:
                 if event.key == pygame.K_p:
                     game_state = "perdu"
                     dt = 0
+
+                if event.key == pygame.K_g:
+                    game_state = "gagne"
+                    dt = 0
                 
                 if event.key == pygame.K_m:
                     inventory.pick_up(Objet('casier'),screen)
@@ -67,7 +73,7 @@ while running:
                 if event.key == pygame.K_b:
                     text.afficher_salle(Yellow("Bookshop"),screen)
 
-            if game_state == "perdu":
+            if game_state == "perdu" or game_state == "gagne":
                 if event.key == pygame.K_SPACE:
                     game_state = "title"
                 elif event.key == pygame.K_ESCAPE:
@@ -156,7 +162,16 @@ while running:
         pygame.draw.rect(screen,couleurs['lightblue'],pygame.Rect(centerx + 20, centery + 10,220,50),width=6)
         text.ligne_texte_centre("Quitter (ESC)",screen,color="white",offsetx=130,offsety=35,font=text.inventory_font)
 
-        pygame.display.flip()    
+        pygame.display.flip()  
+
+    if game_state== "gagne":
+        
+        screen.blit(mansion,(0,0))
+
+        text.ligne_texte_centre("Vous avez gagné !",screen,color="white",font=text.room_font)
+        text.ligne_texte_centre("Appuyez sur ESC pour quitter ou SPACE pour rejouer",screen,color="white",font=text.font2,offsety=100)
+
+        pygame.display.flip()
 
 pygame.quit()
 

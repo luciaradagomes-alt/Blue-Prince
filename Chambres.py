@@ -43,125 +43,6 @@ class Room :
     def __str__(self):
         return f"{self.name} (pièce {self.color})"
 
-
-class Green(Room):
-    """Ce sont des jardins d'intérieur, qui contiennent souvent des gemmes, des endroits où creuser, et des objets permanents"""
-    
-    rooms = ["Terrace", "Patio", "Courtyard", "Cloister", "Veranda", "Greenhouse", "Morning Room", "Secret Garden"]
-
-    def __init__(self, name:str):
-        super().__init__(name, "vert")
-        self.cost = self.gem_cost()
-        self.dig_spots_available = self.dig_spots()
-        self.gem_bonus = self.gem_bonus()
-        self.permanent_objects = None
-        self.available_items = self.items()
-        
-    def items(self):
-        """Génère les items des pièces"""
-        if self.name == "Terrace":
-            room_items = {"banane": 1, "orange": 1, "gemme":random.randint(1,2), "pièce": 2, "compas":1, "pelle": 1}
-            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
-        elif self.name == "Patio":
-            room_items = {"pomme": 1, "clé": 1, "gemme":random.randint(1,3), "détecteur de métal": 1, "pelle": 1}
-            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
-        elif self.name == "Courtyard":
-            room_items = {"détecteur de métal": 1, "marteau": 1, "pelle": 1}
-            return dict(random.sample(list(room_items.items()), 1)) 
-        elif self.name == "Cloister":
-            room_items = {"gemme":random.randint(1,3)}
-            return room_items
-        elif self.name == "Veranda":
-            room_items = {"détecteur de métal": 1, "marteau": 1, "pelle": 1, "gemme":1}
-            return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
-        elif self.name == "Greenhouse":
-            room_items = {"détecteur de métal": 1, "marteau": 1, "pelle": 1}
-            return dict(random.sample(list(room_items.items()), 1)) 
-        elif self.name == "Morning Room":
-            room_items = {"dé": 2, "patte de lapin": 1, "pelle": 1, "salière": 1, "coin purse":1}
-            return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
-        elif self.name == "Secret Room":
-            room_items = {"détecteur de métal": 1, "pelle": 1, "marteau": 1, "levier cassé":1}
-            return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
-    
-    def dig_spots(self):
-        """Génère des endroits pour creuser selon les pièces"""
-
-        spots = {
-            "Terrace": random.randint(1, 3),
-            "Patio": random.randint(2, 5),
-            "Courtyard": random.randint(2, 3),
-            "Cloister": random.randint(2, 4),
-            "Veranda": random.randint(2, 4),
-            "Greenhouse": random.randint(2, 4),
-            "Morning Room": random.randint(0, 3),
-            "Secret Garden":random.randint(3, 7)
-            }
-        return spots.get(self.name)
-
-    def gem_cost(self):
-        """Génère le coût pour entrer dans chaque pièce"""
-        cost = {
-            "Terrace": 0,
-            "Patio": 1,
-            "Courtyard": 1,
-            "Cloister": 3,
-            "Veranda": 2,
-            "Greenhouse": 1,
-            "Morning Room": 1,
-            "Secret Garden": 0
-            }
-        return cost.get(self.name)
-
-    def gem_bonus(self):
-        """Indique si les pièces apportent un bonus (gemmes) ou pas"""
-        rooms = {
-            "Terrace": (True, random.randint(1, 2)),
-            "Patio": (True, random.randint(1, 3)),
-            "Courtyard": (True, random.randint(1, 2)),
-            "Cloister": (False, 0),
-            "Veranda": (True, 1),
-            "Greenhouse": (False, 0),
-            "Morning Room": (True, 1),
-            "Secret Garden": (False, 0)
-            }
-        return rooms.get(self.name)
-
-    def enter_room(self, inventory : Inventory) :
-        """Interface pour rentrer dans les pièces vertes"""
-        print(f"Vous êtes dans {self.name}")
-        if self.gem_cost>0 :
-            print(f"Coût d'entrée : {self.gem_cost} gemme/s.")
-            if inventory.gems < self.gem_cost :
-                print(f"Vous n'avez pas assez de gemmes. Vous êtes en manque de {self.gem_cost - inventory.gems} gemme/s.")
-                return False
-            print(f"Souhaitez-vous dépenser {self.gem_cost} gemme/s ?")
-
-            response = ''
-            while response != 'o' and response != 'n' :
-                    response = input("\nTapez 'o' pour oui et 'n' pour non : ")
-            response = (response == 'n')
-            if response :
-                print("\nVous ne souhaitez pas explorer la pièce.")
-                return False
-            
-            inventory.gems -= self.gem_cost
-            print(f"Gemmes restantes : {inventory.gems}")
-
-            """if not self.visited :
-                effects = self.apply_special_effects(inventory)"""
-
-            bonus = self.gem_bonus()
-            if bonus > 0:
-                print("Vous avez trouvé {bonus} gemme/s !")
-                inventory.gems += bonus
-                #effects = True
-            
-            
-            
-                
-
-
 class Yellow(Room) :
     """Ce sont des magasins dans lesquels il est possible d'échanger de l'or contre d'autres objets."""
     
@@ -312,7 +193,7 @@ class Yellow(Room) :
             return
         
         items_list = list(self.items_for_sale.items())
-        for (item, price) in enumerate(items_list):
+        for item, price in items_list:
             print(f"{item:.<18} {price} pièces")
         print("\nAnnuler :(")
         print(f"\nVotre argent : {inventory.coins} pièces")
@@ -451,17 +332,180 @@ class Yellow(Room) :
                 print("\nAu revoir !")
                 return True
 
+class Green(Room):
+    """Ce sont des jardins d'intérieur, qui contiennent souvent des gemmes, des endroits où creuser, et des objets permanents"""
+    
+    rooms = ["Terrace", "Patio", "Courtyard", "Cloister", "Veranda", "Greenhouse", "Morning Room", "Secret Garden"]
 
-#%%
-rooms = {
+    def __init__(self, name:str):
+        super().__init__(name, "vert")
+        self.grid_size = 9 # tentative de grille
+        self.player_position = [4, 4] # tentative d'implémentation du player pour les tests, en réalité, la position initiale est liée à la porte d'où le player arrive
+        self.cost = self.gem_cost() # Coût de la pièce
+        self.dig_spots_available = self.dig_spots() # Nombre d'endroits à creuser
+        self.dig_spots_position = self.dig_position() # Position des endroits à creuser s'il y en a
+        self.gem_bonus = self.gem_bonus() # Bonus des pièces lorsque le joueur rentre dedans
+        self.permanent_objects = None # objets permanents (ex: pelle)
+        self.available_items = self.items() # items que le joueur découvre en ouvrant des coffres, armoires etc. Ici, le joueur les obtient immédiatemment
+        self.grid = self.grid_init() # tentative de grille
+
+    def display_grid(self): # Tentative d'affichage de grille, à modifier
+        """Affichage de la grille"""
+        return self.grid    
+    
+    def get_player_position(self): # À modifier 
+        """Renvoie la position du player"""
+        return self.player_position
+    
+    def items(self):
+        """Génère les items des pièces"""
+        if self.name == "Terrace":
+            room_items = {"banane": 1, "orange": 1, "gemme":random.randint(1,2), "pièce": 2, "compas":1, "pelle": 1}
+            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
+        elif self.name == "Patio":
+            room_items = {"pomme": 1, "clé": 1, "gemme":random.randint(1,3), "détecteur de métal": 1, "pelle": 1}
+            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
+        elif self.name == "Courtyard":
+            room_items = {"détecteur de métal": 1, "marteau": 1, "pelle": 1}
+            return dict(random.sample(list(room_items.items()), 1)) 
+        elif self.name == "Cloister":
+            room_items = {"gemme":random.randint(1,3)}
+            return room_items
+        elif self.name == "Veranda":
+            room_items = {"détecteur de métal": 1, "marteau": 1, "pelle": 1, "gemme":1}
+            return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
+        elif self.name == "Greenhouse":
+            room_items = {"détecteur de métal": 1, "marteau": 1, "pelle": 1}
+            return dict(random.sample(list(room_items.items()), 1)) 
+        elif self.name == "Morning Room":
+            room_items = {"dé": 2, "patte de lapin": 1, "pelle": 1, "salière": 1, "coin purse":1}
+            return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
+        elif self.name == "Secret Garden":
+            room_items = {"détecteur de métal": 1, "pelle": 1, "marteau": 1, "levier cassé":1}
+            return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
+    
+    def dig_spots(self):
+        """Génère un nombre d'endroits à creuser selon les pièces"""
+
+        spots = {
+            "Terrace": random.randint(1, 3),
+            "Patio": random.randint(2, 5),
+            "Courtyard": random.randint(2, 3),
+            "Cloister": random.randint(2, 4),
+            "Veranda": random.randint(2, 4),
+            "Greenhouse": random.randint(2, 4),
+            "Morning Room": random.randint(0, 3),
+            "Secret Garden":random.randint(3, 7)
+            }
+        return spots.get(self.name)
+
+    def gem_cost(self):
+        """Génère le coût pour entrer dans chaque pièce"""
+        cost = {
+            "Terrace": 0,
+            "Patio": 1,
+            "Courtyard": 1,
+            "Cloister": 3,
+            "Veranda": 2,
+            "Greenhouse": 1,
+            "Morning Room": 0,
+            "Secret Garden": 0
+            }
+        return cost.get(self.name)
+
+    def gem_bonus(self):
+        """Indique si les pièces apportent un bonus (gemmes) ou pas"""
+        rooms = {
             "Terrace": (True, random.randint(1, 2)),
             "Patio": (True, random.randint(1, 3)),
-            "Courtyard": (True, random.randint(1, 2)),
+            "Courtyard": (True, 2),
             "Cloister": (False, 0),
             "Veranda": (True, 1),
             "Greenhouse": (False, 0),
-            "Morning Room": (True, 1),
+            "Morning Room": (True, 2),
             "Secret Garden": (False, 0)
-            } 
-rooms.get("Courtyard")[0]
-# %%
+            }
+        return rooms.get(self.name)
+
+    def grid_init(self): # Tentative de grille. à modifier
+        """Initialise une grille 9x9 avec des endroits à creuser aléatoires"""
+        grid = [['' for _ in range(self.grid_size)] for _ in range(self.grid_size)]
+
+        for x, y in self.dig_spots_position:
+           if 0 <=x< self.grid_size and 0<=y<self.grid_size:
+               grid[y][x] = 'D' # endroit à creuser
+        
+        grid[self.player_position[1]][self.player_position[0]] = 'P' # position du player
+
+        return grid
+
+    def dig_position(self): # À modifier avec la vraie grille du jeu
+        """Génère les endroits à creuser"""
+        spots = self.dig_spots_available
+        positions = []
+
+        for n in range(spots):
+            x = random.randint(0, self.grid_size - 1)
+            y = random.randint(0, self.grid_size - 1)
+            if (x, y) != (self.player_position[0], self.player_position[1]):
+                positions.append((x, y))
+
+        return positions
+
+    def enter_room(self, inventory : Inventory) :
+        """Interface pour rentrer dans les pièces vertes"""
+
+        print(f"Vous êtes dans {self.name} !")
+
+        if self.cost>0 :
+            print(f"Coût d'entrée : {self.cost} gemme/s.")
+            print(f"Souhaitez-vous dépenser {self.cost} gemme/s ?")
+            response = ''
+            while response not in ['o', 'n']:
+                response = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
+            
+            if response == 'n':
+                print("Vous ne souhaitez pas explorer la pièce.")
+                return False
+
+            if inventory.gems < self.cost :
+                print(f"Vous n'avez pas assez de gemmes. Vous êtes en manque de {self.cost - inventory.gems} gemme/s.")
+                return False
+            
+            inventory.gems -= self.cost
+            print(f"Gemmes restantes : {inventory.gems}")
+            if inventory.gems < 5 :
+                print("Économisez bien vos gemmes ! Vous n'en avez à peine :(")
+        
+        # Certaines pièces apportent des gemmes juste en les débloquants, puis après quelques jours
+        has_bonus, bonus_amount = self.gem_bonus
+        if has_bonus and bonus_amount > 0:
+            print(f"Bonus ! \n+ {bonus_amount} gemme(s)")
+            inventory.gems += bonus_amount
+        
+        # De façon aléatoire, certaines pièces contiennent des items dans les armoires, coffres etc. Pour l'instant, le joeur les obtient immédiatement
+        if self.available_items and not self.visited:
+            print("Objets découverts dans le jardin :")
+            for item_name, _ in self.available_items.items():
+                print(f"==> {item_name}")
+                inventory.pick_up(Objet(item_name))
+        
+        print("\nGrille de la pièce :") # Grille à modifier
+        self._display_text_grid()
+        
+        self.visited = True
+        return True
+
+    def _display_text_grid(self): # Tentative de grille, à modifier
+        """Affiche la grille en version texte pour les tests"""
+        for y in range(self.grid_size):
+            line = ""
+            for x in range(self.grid_size):
+                cell = self.grid[y][x]
+                if cell == 'P':
+                    line += "O"  # Joueur
+                elif cell == 'D':
+                    line += "X "  # Endroits à creuser
+                else:
+                    line += "_"   # Vide
+            print("  " + line)

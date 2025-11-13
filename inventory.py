@@ -1,7 +1,7 @@
 import pygame
 from objet import Objet
 import text
-from colorpalet import couleurs
+from colorpalette import couleurs
 
 class Inventory:
     """ Classe qui contient les objets dans l'inventaire du joueur.
@@ -43,8 +43,8 @@ class Inventory:
     def __init__(self):
         self.steps = 70
         self.coins = 0
-        self.gems = 2 
-        self.keys = 0
+        self.gems = 10 
+        self.keys = 10
         self.dice = 0
         self.shovel = False
         self.hammer = False

@@ -2,7 +2,6 @@
 from inventory import Inventory
 from objet import Objet
 #%%
-from abc import ABC, abstractmethod
 import random
 
 #%%
@@ -28,15 +27,26 @@ class Room :
         return self.__name
     
     @name.setter
-    def name(self,name):
+    def name(self, name):
+        # MODIFICATION: rendre plus permissif pour les noms nettoyés
         if name not in Room.possible:
-            raise ValueError("Ce n'est pas un objet")
-        self.__name = name
+            # Essayer de trouver une correspondance approximative
+            name_cleaned = name.replace("_", " ").title()
+            if name_cleaned in Room.possible:
+                self.__name = name_cleaned
+                return
+            # Si toujours pas trouvé, accepter quand même (pour le développement)
+            print(f"Attention: '{name}' n'est pas dans la liste des salles possibles")
+            self.__name = name
+        else:
+            self.__name = name
 
-    @abstractmethod
-    def enter_room(self, inventory : Inventory):
+  
+    def enter_room(self, inventory):
         """Ajoute des effets lorsque le joueur rentre dans la pièce"""
-        pass
+        print(f"Vous entrez dans {self.name}")
+        self.visited = True
+        return True
     def add_door(self, room):
         """Ajoute une porte vers une nouvelle pièce"""
         self.doors.append(room)

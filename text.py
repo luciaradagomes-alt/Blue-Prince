@@ -165,7 +165,7 @@ def afficher_message_temps(texte,screen,time=1000,font=font3):
     pygame.display.flip()
     pygame.time.delay(time)
 
-def afficher_message(texte,screen,font=font3):
+def afficher_message(texte,screen,font=font3): # à FINIR
     """ Permet d'afficher un message au centre l'interface graphique.
 
     Paramètres

@@ -1,7 +1,7 @@
 import pygame
 from objet import Objet
 import text
-from colorpalet import couleurs
+from colorpalette import couleurs
 
 class Inventory:
     """ Classe qui contient les objets dans l'inventaire du joueur.

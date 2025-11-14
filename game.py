@@ -5,7 +5,7 @@ from player import Player
 from map import Map
 from room_draw import RoomDraw
 from colorpalette import couleurs
-from chambres import Yellow, Green
+from Chambres import Yellow, Green
 
 pygame.init()
 screen = pygame.display.set_mode((1600, 900))
@@ -317,7 +317,7 @@ while running:
         if message_timer < 0:
             message_timer = 0
             current_message = ""
-
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -329,26 +329,56 @@ while running:
                     game_state = "choix_clavier"
                     dt = 0
 
-            if game_state == "choix_clavier":
-                key_arriere = pygame.K_s
-                key_droite = pygame.K_d
+            elif game_state == "choix_clavier":
                 if event.key == pygame.K_1:
                     key_avant = pygame.K_w
                     key_gauche = pygame.K_a
+                    key_arriere = pygame.K_s
+                    key_droite = pygame.K_d
                     game_state = "jeu"
                     init_game()
-                if event.key == pygame.K_2:
+                elif event.key == pygame.K_2:
                     key_avant = pygame.K_z
                     key_gauche = pygame.K_q
+                    key_arriere = pygame.K_s
+                    key_droite = pygame.K_d
                     game_state = "jeu"
                     init_game()
             
             elif game_state == "jeu":
-
                 if event.key == pygame.K_i:
                     inventory_show = not inventory_show
                     dt = 0
                 
+                # Déplacements (seulement si pas en mouvement et pas dans l'inventaire)
+                if not player.is_moving and not inventory_show:
+                    if event.key == key_avant:
+                        handle_movement(0, -1)
+                    elif event.key == key_arriere:
+                        handle_movement(0, 1)
+                    elif event.key == key_gauche:
+                        handle_movement(-1, 0)
+                    elif event.key == key_droite:
+                        handle_movement(1, 0)
+                
+                # Entrer dans la salle
+                if event.key == pygame.K_e and not inventory_show:
+                    enter_current_room()
+                
+                # Tirer des pièces
+                if event.key == pygame.K_t and not inventory_show:
+                    show_message("Système de tirage - À implémenter avec interface graphique")
+                
+                # Ramasser des objets (pour tester)
+                if event.key == pygame.K_o and not inventory_show:
+                    # Test: ajouter des objets aléatoires
+                    import random
+                    items = ["pièce", "gemme", "clé", "banane", "pelle"]
+                    item = random.choice(items)
+                    player.inventory.pick_up(Objet(item), screen)
+                    show_message(f"Ramassé: {item}")
+                
+                # Debug
                 # Déplacements (seulement si pas en mouvement et pas dans l'inventaire)
                 if not player.is_moving and not inventory_show:
                     if event.key == key_avant:
@@ -385,47 +415,47 @@ while running:
                     game_state = "gagne"
                     dt = 0
 
-            if game_state == "perdu" or game_state == "gagne":
+            elif game_state == "perdu" or game_state == "gagne":
                 if event.key == pygame.K_SPACE:
                     game_state = "title"
+                    inventory_show = False
                 elif event.key == pygame.K_ESCAPE:
                     running = False
-        
+
     # Rendu
     if game_state == "title":
         screen.blit(titlecard, (0, 0))
         pygame.display.flip()
 
-    if game_state == "choix_clavier":
-        dt += frame_dt 
+    elif game_state == "choix_clavier":
+        dt += frame_dt
         if dt <= 2500:
             background.set_alpha(65)
-            screen.blit(background,(0,0))
+            screen.blit(background, (0, 0))
         elif dt <= 5000:
             background.set_alpha(160)
-            screen.blit(background,(0,0))
+            screen.blit(background, (0, 0))
         else:
             background.set_alpha(255)
-            screen.blit(background,(0,0))
+            screen.blit(background, (0, 0))
         
-        text.texte_centre(["Voulez-vous jouer sur WASD ou QZSD ?","1. WASD","2. QZSD"],screen,-300,-100,font=text.font2)
+        text.texte_centre(["Voulez-vous jouer sur WASD ou QZSD ?", "1. WASD", "2. QZSD"],
+                         screen, -300, -100, font=text.font2)
         pygame.display.flip()
         
-    elif game_state == "jeu": 
+    elif game_state == "jeu":
         if inventory_show:
             dt += frame_dt
             if dt <= 250:
-                screen.blit(noir,(0,0))
-                
-            screen.blit(player.inventory.show_inventory(),(0,0))
-
+                screen.blit(noir, (0, 0))
+            screen.blit(player.inventory.show_inventory(), (400, 250))
+            
             # Instructions pour fermer
             help_text = text.inventory_font.render("Appuyez sur I pour fermer l'inventaire", 
                                                    True, "white")
             screen.blit(help_text, (centerx - 150, 700))
-
-            pygame.display.flip()
             
+            pygame.display.flip()
         else:
             # mettre à jour le joueur
             player.update(frame_dt / 1000.0)
@@ -449,35 +479,40 @@ while running:
                 "I: Inventaire | E: Entrer | O: Ramasser (test) | T: Tirer des pièces", 
                 True, "white")
             screen.blit(help_text, (20, screen.get_height() - 30))
-        
+            
             pygame.display.flip()
 
         # Vérifier fin de partie
         if player.inventory.steps <= 0:
             game_state = "perdu"
             dt = 0
-
         elif check_win_condition():
             game_state = "gagne"
             dt = 0
-
+    
     elif game_state == "perdu":
-        
-        dt += clock.tick(60) 
+        dt += frame_dt
         if dt <= 250:
-            screen.blit(noir,(0,0))
+            screen.blit(noir, (0, 0))
+        pygame.draw.rect(screen, couleurs['darkblue'], 
+                        pygame.Rect(centerx - 300, centery - 100, 600, 200))
+        pygame.draw.rect(screen, couleurs['lightblue'], 
+                        pygame.Rect(centerx - 300, centery - 100, 600, 200), width=10)
+        text.texte_centre(["Vous ne pouvez plus avancer", "Vous avez perdu"], 
+                         screen, color=couleurs['lightblue'], offsety=-20)
+        pygame.draw.rect(screen, couleurs['blue1'], 
+                        pygame.Rect(centerx - 240, centery + 10, 220, 50))
+        pygame.draw.rect(screen, couleurs['lightblue'], 
+                        pygame.Rect(centerx - 240, centery + 10, 220, 50), width=6)
+        text.ligne_texte_centre("Recommencer (SPACE)", screen, color="white", 
+                               offsetx=-130, offsety=35, font=text.inventory_font)
 
-        pygame.draw.rect(screen,couleurs['darkblue'],pygame.Rect(centerx - 300,centery - 100,600,200))
-        pygame.draw.rect(screen,couleurs['lightblue'],pygame.Rect(centerx - 300,centery - 100,600,200),width=10)
-        text.texte_centre(["Vous ne pouvez plus avancer", "Vous avez perdu"],screen,color=couleurs['lightblue'],offsety=-20)
-        
-        pygame.draw.rect(screen,couleurs['blue1'],pygame.Rect(centerx - 240, centery + 10,220,50))
-        pygame.draw.rect(screen,couleurs['lightblue'],pygame.Rect(centerx - 240, centery + 10,220,50),width=6)
-        text.ligne_texte_centre("Recommencer (SPACE)",screen,color="white",offsetx=-130,offsety=35,font=text.inventory_font)
-
-        pygame.draw.rect(screen,couleurs['blue1'],pygame.Rect(centerx + 20, centery + 10,220,50))
-        pygame.draw.rect(screen,couleurs['lightblue'],pygame.Rect(centerx + 20, centery + 10,220,50),width=6)
-        text.ligne_texte_centre("Quitter (ESC)",screen,color="white",offsetx=130,offsety=35,font=text.inventory_font)
+        pygame.draw.rect(screen, couleurs['blue1'], 
+                        pygame.Rect(centerx + 20, centery + 10, 220, 50))
+        pygame.draw.rect(screen, couleurs['lightblue'], 
+                        pygame.Rect(centerx + 20, centery + 10, 220, 50), width=6)
+        text.ligne_texte_centre("Quitter (ESC)", screen, color="white", 
+                               offsetx=130, offsety=35, font=text.inventory_font)
 
         pygame.display.flip()  
 
@@ -491,4 +526,3 @@ while running:
         pygame.display.flip()
 
 pygame.quit()
-

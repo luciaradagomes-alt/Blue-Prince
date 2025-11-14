@@ -25,7 +25,7 @@ class Objet:
                 "pièce", "gemme", "clé", "dé",
                 "coffre", "casier", "endroit creusable",
                 "pelle", "marteau", "patte de lapin", "kit de crochetage", "détecteur de métal", "levier cassé",
-                "loupe", "salière", "compas", "masque pour dormir"]
+                "loupe", "salière", "compas", "masque pour dormir", "coin purse"]
 
     def __init__(self, name):
         self.name = name

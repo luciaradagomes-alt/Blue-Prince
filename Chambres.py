@@ -1,11 +1,103 @@
 #%%
 from inventory import Inventory
 from objet import Objet
-#%%
-from abc import ABC, abstractmethod
+import pygame
 import random
 
 #%%
+class RoomGrid:
+    """Gère les grille 9x9 des pièces"""
+
+    def __init__(self, room_name, entry_door):
+        self.grid_size = 9
+        self.tile_size = 64
+        self.room_name = room_name
+        self.entry_door = entry_door
+        self.grid = [["empty" for _ in range(self.grid_size)] for _ in range(self.grid_size)]
+        self.player_position = self.get_player_init_position()
+        self.apply_room_data()
+        self.active = True
+        
+    def get_player_init_position(self) :
+        """Récupère la position initiale du joueur, en fonction de la porte ouverte."""
+        center = self.grid_size // 2
+
+        if self.entry_door == "north":
+            return [center, self.grid_size - 1]
+        if self.entry_door == "south":
+            return [center, 0] 
+        if self.entry_door == "east":
+            return [self.grid_size - 1, center] 
+        if self.entry_door == "west":
+            return [0, center] 
+        # fallback par défaut
+        return [center, center]
+
+    def grid_init(self):
+        """Initialisation de la grille de la pièce."""
+        grid = [["empty" for _ in range(self.grid_size)] for _ in range(self.grid_size)]
+
+        # dig spots
+        for (x, y) in getattr(self.room, "dig_spots_position", []):
+            if 0 <= x < self.grid_size and 0 <= y < self.grid_size:
+                grid[y][x] = "dig"
+
+        px, py = self.player_position
+        grid[py][px] = "player"
+
+        return grid
+
+    def apply_room_data(self):
+        """Gère les endroits à creuser, les coffres et les lockers."""
+        dig_positions = getattr(self.room_name, "dig_spots_position", [])
+        chest_position = getattr(self.room_name, "chest_spots_position", [])
+        locker_position = getattr(self.room_name, "locker_spots_position", [])
+
+        # Endroits pour creuser :
+        for (x, y) in dig_positions:
+            if 0 <= x < self.grid_size and 0 <= y < self.grid_size:
+                self.grid[y][x] = "dig"
+
+        # Coffres :
+        for (x, y) in chest_position:
+            if 0 <= x < self.grid_size and 0 <= y < self.grid_size:
+                self.grid[y][x] = "chest"
+
+        # Lockers :
+        for (x, y) in locker_position:
+            if 0 <= x < self.grid_size and 0 <= y < self.grid_size:
+                self.grid[y][x] = "locker"
+
+        # Player position
+        px, py = self.player_pos
+        self.grid[py][px] = "player"
+    
+    def move(self, dx, dy):
+        """Gère le mouvement du joueur sur la grille."""
+        px, py = self.player_pos
+        nx, ny = px + dx, py + dy
+
+        # limites de la pièce
+        if not (0 <= nx < self.grid_size and 0 <= ny < self.grid_size):
+            return
+
+        
+        self.grid[py][px] = "empty"
+        self.grid[ny][nx] = "player"
+        self.player_pos = [nx, ny]
+
+    def draw(self, surface):
+        """Dessine la grille, ou implémente la grille"""
+
+    def player_is_on_door(self):
+        """Gère la sortie de la pièce du joueur"""
+        px, py = self.player_pos
+        mid = self.GRID_SIZE // 2
+        return (px, py) in [
+            (mid, 0), (mid, self.GRID_SIZE-1),
+            (0, mid), (self.GRID_SIZE-1, mid)
+        ]
+
 class Room :
     """Classe qui définit les pièces du jeu."""
     
@@ -22,24 +114,37 @@ class Room :
         self.color = color
         self.visited = False # False si la pièce n'a pas encore été visité, True sinon
         self.doors = [] # Liste des pièces qui peuvent être accédées à travers la pièce actuelle
-    
+
     @property
     def name(self):
         return self.__name
     
     @name.setter
-    def name(self,name):
+    def name(self, name):
+        # MODIFICATION: rendre plus permissif pour les noms nettoyés
         if name not in Room.possible:
-            raise ValueError("Ce n'est pas un objet")
-        self.__name = name
+            # Essayer de trouver une correspondance approximative
+            name_cleaned = name.replace("_", " ").title()
+            if name_cleaned in Room.possible:
+                self.__name = name_cleaned
+                return
+            # Si toujours pas trouvé, accepter quand même (pour le développement)
+            print(f"Attention: '{name}' n'est pas dans la liste des salles possibles")
+            self.__name = name
+        else:
+            self.__name = name
 
-    @abstractmethod
-    def enter_room(self, inventory : Inventory):
+  
+    def enter_room(self):
         """Ajoute des effets lorsque le joueur rentre dans la pièce"""
-        pass
+        print(f"Vous entrez dans {self.name}")
+        self.visited = True
+        return True
+    
     def add_door(self, room):
         """Ajoute une porte vers une nouvelle pièce"""
         self.doors.append(room)
+    
     def __str__(self):
         return f"{self.name} (pièce {self.color})"
 
@@ -332,6 +437,278 @@ class Yellow(Room) :
                 print("\nAu revoir !")
                 return True
 
+class Purple(Room):
+    rooms = ["Bedroom", "Boudoir", "Guest Bedroom", "Nursery", "Servant's Quarters", "Bunk Room", "Her Ladyship's Chamber", "Master Bedroom"] 
+    
+    def __init__(self, name:str):
+        super().__init__(name, "red")
+        self.dig_spots_available = self.dig_spots() # Nombre d'endroits à creuser
+        self.dig_spots_position = self.dig_position() # Position des endroits à creuser s'il y en a
+        self.permanent_objects = None # objets permanents (ex: pelle)
+        self.available_items = self.items() # items que le joueur découvre en ouvrant des coffres, armoires etc. Ici, le joueur les obtient immédiatemment
+        self.cost = self.gem_cost() # Coût de la pièce
+        
+    def items(self):
+        """Génère les items des pièces"""
+        if self.name == "Bedroom":
+            room_items = {"pomme": 1, "dé": 1, "clé": 1, "gemme": 1, "pièce": 3, "coin purse":1, "masque pour dormir": 1}
+            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
+        elif self.name == "Boudoir":
+            room_items = {"pièce": random.choice([2, 3, 5]), "clé": random.randint(1,2), "gemme": 1, "coin purse": 1, "masque pour dormir": 1}
+            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
+        elif self.name == "Guest Bedroom":
+            room_items = {"clé": 1, "gemme": 1, "compas": 1}
+            return dict(random.sample(list(room_items.items()), 1)) 
+        elif self.name == "Nursery":
+            room_items = {"dé": 2, "clé": 1, "gemme": 1, "pièce": 3, "patte de lapin": 1}
+            return dict(random.sample(list(room_items.items()), 2)) 
+        elif self.name == "Servant's Quarters":
+            room_items = {"dé": 2, "gemme": 1, "levier cassé": 1, "détecteur de métal": 1, "pelle": 1}
+            return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
+        elif self.name == "Bunk Room":
+            room_items = {"banane": 2, "clé": 2, "gemme" : 2, "pièce": 4}
+            return dict(random.sample(list(room_items.items()), random.randint(1, 2))) 
+        elif self.name == "Her Ladyship's Chamber":
+            room_items = {"banane": 1, "patte de lapin": 1, "clé": 1, "gemme": 1, "pièce":5, "coin purse" : 1, "masque pour dormir": 1}
+            return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
+        elif self.name == "Master Bedroom":
+            room_items = {"dé": 2, "pièce": random.choice([4, 5, 9]), "clé": 1, "gemme":random.randint(1,3), "kit de crochetage": 1, "masque pour dormir" :1, "compas": 1}
+            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
+
+    def gem_cost(self):
+        """Génère le coût pour entrer dans chaque pièce"""
+        cost = {
+            "Bedroom": 0,
+            "Boudoir": 0,
+            "Guest Bedroom": 0,
+            "Nursery": 1,
+            "Servant's Quarters": 1,
+            "Bunk Room": 0,
+            "Her Ladyship's Chamber": 0,
+            "Her": 2
+            }
+        return cost.get(self.name)
+
+    def dig_spots(self):
+        """Génère un nombre d'endroits à creuser selon les pièces"""
+
+        spots = {
+            "Bedroom": 0,
+            "Boudoir": 0,
+            "Guest Bedroom": 0,
+            "Nursery": 0,
+            "Servant's Quarters": 0,
+            "Bunk Room": 0,
+            "Her Ladyship's Chamber": 0,
+            "Her": 0
+            }
+        return spots.get(self.name)
+
+    def chest_spots(self):
+        """Génère un nombre de coffres selon les pièces"""
+
+        spots = {
+            "Bedroom": 0,
+            "Boudoir": 0,
+            "Guest Bedroom": 0,
+            "Nursery": 0,
+            "Servant's Quarters": 0,
+            "Bunk Room": 0,
+            "Her Ladyship's Chamber": 0,
+            "Her": 0
+            }
+        return spots.get(self.name)
+    
+    def locker_spots(self):
+            """Génère un nombre de lockers selon les pièces"""
+
+            spots = {
+                "Bedroom": 0,
+                "Boudoir": 0,
+                "Guest Bedroom": 0,
+                "Nursery": 0,
+                "Servant's Quarters": 0,
+                "Bunk Room": 0,
+                "Her Ladyship's Chamber": 0,
+                "Her": 0
+                }
+            return spots.get(self.name)
+    
+    def enter_room(self, inventory : Inventory) :
+        """Interface pour rentrer dans les pièces vertes"""
+
+        print(f"Vous êtes dans {self.name} !")
+
+        if self.cost>0 :
+            print(f"Coût d'entrée : {self.cost} gemme/s.")
+            print(f"Souhaitez-vous dépenser {self.cost} gemme/s ?")
+            response = ''
+            while response not in ['o', 'n']:
+                response = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
+            
+            if response == 'n':
+                print("Vous ne souhaitez pas explorer la pièce.")
+                return False
+
+            if inventory.gems < self.cost :
+                print(f"Vous n'avez pas assez de gemmes. Vous êtes en manque de {self.cost - inventory.gems} gemme/s.")
+                return False
+            
+            inventory.gems -= self.cost
+            print(f"Gemmes restantes : {inventory.gems}")
+            if inventory.gems < 5 :
+                print("Économisez bien vos gemmes ! Vous n'en avez à peine :(")
+        
+        if self.name == "Bedroom":
+            extra_steps = 2
+
+            print(f"Vois avez très bien dormi ! \n     + {extra_steps} pas")
+            inventory.steps += 2
+            print(f"Pas : {inventory.steps}")
+
+        if self.name == "Boudoir" :
+            extra_steps = random.randint(0, 4)
+            print(f"Vois avez très bien dormi ! \n     + {extra_steps} pas")
+            inventory.steps += extra_steps
+            print(f"Pas : {inventory.steps}")
+
+        if self.name == "Guest Bedroom" and not self.visited:
+            extra_steps = 10
+            print(f"Vois avez très bien dormi ! \n     + {extra_steps} pas")
+            inventory.steps += extra_steps
+            print(f"Pas : {inventory.steps}")
+        if self.name == "Servant's Quarters" and not self.visited:
+            print(f"Vous voyez 3 clés sur le lit.\n    + 3 clés")
+            inventory.keys +=3
+            print(f"Clés disponible dans l'inventaire : {inventory.keys}")
+        # De façon aléatoire, certaines pièces contiennent des items dans les armoires, coffres etc. Pour l'instant, le joeur les obtient immédiatement
+        if self.available_items and not self.visited :
+            if self.name == "Bedroom" :
+                print(random.choice(["Vous trouvez dans l'armoire :", "Vous trouvez sur la statue :"]))
+            if self.name == "Boudoir" or self.name == "Guest Bedroom" or self.name == "Nursery" or self.name == "Master Bedroom":
+                print("Vous trouvez sur la table :")
+            if self.name == "Servant's Quarters" :
+                print(random.choice(["Vous trouvez sur le lit :", "Vous trouvez sur la planche à repasser :"]))
+            if self.name == "Her Ladyship's Chamber" :
+                print(random.choice(["Vous trouvez sur la table :", "Vous trouvez sur la chaisse :"]))
+            
+            for item_name, _ in self.available_items.items():
+                print(f"==> {item_name}")
+                inventory.pick_up(Objet(item_name))
+        
+        self.visited = True
+        return True
+
+class Red(Room):
+
+    rooms = ["Lavatory", "Chapel", "Maid's Chamber", "Archives", "Gymnasium", "Darkroom", "Weight Room", "Furnace"] 
+    
+    def __init__(self, name:str):
+        super().__init__(name, "red")
+        self.dig_spots_available = self.dig_spots() # Nombre d'endroits à creuser
+        self.dig_spots_position = self.dig_position() # Position des endroits à creuser s'il y en a
+        self.permanent_objects = None # objets permanents (ex: pelle)
+        self.available_items = self.items() # items que le joueur découvre en ouvrant des coffres, armoires etc. Ici, le joueur les obtient immédiatemment
+      
+    def enter_room(self, inventory : Inventory) :
+        """Interface pour entrer dans les pièces vertes"""
+
+        print(f"Vous êtes dans {self.name} !")
+
+        if self.name == "Weight Room":
+            print(f"Après un long entraînement, vous êtes épuisé ! Vous perdez {inventory.steps//2} pas. Reposez-vous, avant de continuer.")
+            inventory.steps = inventory.steps//2
+            print(f"Pas restants : {inventory.steps}")
+
+        if self.name == "Gymnasium" :
+            print(f"Après un long entraînement, vous êtes épuisé ! Vous perdez {inventory.steps - 2} pas. Reposez-vous, avant de continuer.")
+            inventory.steps = inventory.steps - 2
+            print(f"Pas restants : {inventory.steps}")
+
+        if self.name == "Chapel" :
+            print(f"Vous faites une donation de 1 pièce. L'église vous remercie !")
+            if inventory.coins >= 1:
+                inventory.coins -= 1
+                print(f"Pièces restantes : {inventory.coins}")
+            else :
+                print("Vous n'avez pas assez de pièces pour faire une donation.")
+
+        # De façon aléatoire, certaines pièces contiennent des items dans les armoires, coffres etc. Pour l'instant, le joeur les obtient immédiatement
+        if self.available_items and not self.visited :
+            if self.name == "Chapel" :
+                print("Vous trouvez sur les chandeliers :")
+            if self.name == "Archives" :
+                print("Vous fouillez les archives et trouvez :")
+            if self.name == "Gymnasium" :
+                print("Vous trouvez sur le banc :")
+            if self.name == "Darkroom" :
+                print("Vous ne voyez rien, vous ne pouvez pas explorer la pièce dans l'obscurité.")
+                print("Voulez vous allumer la lumière ?")
+                response = ''
+                while response not in ['o', 'n']:
+                    response = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
+                
+                if response == 'o':
+                    print("La lumière est allumée ! Vous trouvez :")
+                else:
+                    return False
+            if self.name == "Weight Room" :
+                print("Vous trouvez à côté des poids :")
+            if self.name == "Furnace" :
+                print("La chaleur est intense, vous voulez partir. Mais, au moins vous avez trouvé quelques items :")
+            for item_name, _ in self.available_items.items():
+                print(f"==> {item_name}")
+                inventory.pick_up(Objet(item_name))
+        
+        print("\nGrille de la pièce :") # Grille à modifier
+        self._display_text_grid()
+        
+        self.visited = True
+        return True
+    
+    def items(self):
+        """Génère les items des pièces"""
+        if self.name == "Lavatory":
+            room_items = {}
+            return room_items
+        elif self.name == "Chapel":
+            gold = [2, 3, 4, 5, 12, 14]
+            room_items = {"pièce": random.choice(gold), "gemme": random.randint(1,2)}
+            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
+        elif self.name == "Maid's Chamber":
+            room_items = {}
+            return room_items
+        elif self.name == "Archives":
+            room_items = {"gemme":random.randint(1,2), "pomme" : 1, "clé" : random.randint(1, 2), "levier cassé" : 1, "détecteur de métal" : 1}
+            return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
+        elif self.name == "Gymnasium":
+            room_items = {"clé": 1, "pièce":3}
+            return room_items
+        elif self.name == "Darkroom":
+            room_items = {"gemme": random.randint(1, 2), "clé": 1, "levier cassé": 1}
+            return dict(random.sample(list(room_items.items()), 1)) 
+        elif self.name == "Weight Room":
+            room_items = {"pièce": 3, "levier cassé": 1}
+            return room_items
+        elif self.name == "Furnace":
+            room_items = {}
+            return room_items 
+    
+    def dig_spots(self):
+        """Génère un nombre d'endroits à creuser selon les pièces"""
+
+        spots = {
+            "Lavatory" : 0, 
+            "Chapel" : 0, 
+            "Maid's Chamber" : 0, 
+            "Archives" : 0, 
+            "Gymnasium" : 0, 
+            "Darkroom" : 0, 
+            "Weight Room" : 0, 
+            "Furnace" : random.randint(0, 2)
+            }
+        return spots.get(self.name)    
+
 class Green(Room):
     """Ce sont des jardins d'intérieur, qui contiennent souvent des gemmes, des endroits où creuser, et des objets permanents"""
     
@@ -339,24 +716,13 @@ class Green(Room):
 
     def __init__(self, name:str):
         super().__init__(name, "vert")
-        self.grid_size = 9 # tentative de grille
-        self.player_position = [4, 4] # tentative d'implémentation du player pour les tests, en réalité, la position initiale est liée à la porte d'où le player arrive
         self.cost = self.gem_cost() # Coût de la pièce
         self.dig_spots_available = self.dig_spots() # Nombre d'endroits à creuser
         self.dig_spots_position = self.dig_position() # Position des endroits à creuser s'il y en a
         self.gem_bonus = self.gem_bonus() # Bonus des pièces lorsque le joueur rentre dedans
         self.permanent_objects = None # objets permanents (ex: pelle)
         self.available_items = self.items() # items que le joueur découvre en ouvrant des coffres, armoires etc. Ici, le joueur les obtient immédiatemment
-        self.grid = self.grid_init() # tentative de grille
-
-    def display_grid(self): # Tentative d'affichage de grille, à modifier
-        """Affichage de la grille"""
-        return self.grid    
-    
-    def get_player_position(self): # À modifier 
-        """Renvoie la position du player"""
-        return self.player_position
-    
+   
     def items(self):
         """Génère les items des pièces"""
         if self.name == "Terrace":
@@ -427,31 +793,6 @@ class Green(Room):
             }
         return rooms.get(self.name)
 
-    def grid_init(self): # Tentative de grille. à modifier
-        """Initialise une grille 9x9 avec des endroits à creuser aléatoires"""
-        grid = [['' for _ in range(self.grid_size)] for _ in range(self.grid_size)]
-
-        for x, y in self.dig_spots_position:
-           if 0 <=x< self.grid_size and 0<=y<self.grid_size:
-               grid[y][x] = 'D' # endroit à creuser
-        
-        grid[self.player_position[1]][self.player_position[0]] = 'P' # position du player
-
-        return grid
-
-    def dig_position(self): # À modifier avec la vraie grille du jeu
-        """Génère les endroits à creuser"""
-        spots = self.dig_spots_available
-        positions = []
-
-        for n in range(spots):
-            x = random.randint(0, self.grid_size - 1)
-            y = random.randint(0, self.grid_size - 1)
-            if (x, y) != (self.player_position[0], self.player_position[1]):
-                positions.append((x, y))
-
-        return positions
-
     def enter_room(self, inventory : Inventory) :
         """Interface pour rentrer dans les pièces vertes"""
 
@@ -490,22 +831,5 @@ class Green(Room):
                 print(f"==> {item_name}")
                 inventory.pick_up(Objet(item_name))
         
-        print("\nGrille de la pièce :") # Grille à modifier
-        self._display_text_grid()
-        
         self.visited = True
         return True
-
-    def _display_text_grid(self): # Tentative de grille, à modifier
-        """Affiche la grille en version texte pour les tests"""
-        for y in range(self.grid_size):
-            line = ""
-            for x in range(self.grid_size):
-                cell = self.grid[y][x]
-                if cell == 'P':
-                    line += "O"  # Joueur
-                elif cell == 'D':
-                    line += "X "  # Endroits à creuser
-                else:
-                    line += "_"   # Vide
-            print("  " + line)

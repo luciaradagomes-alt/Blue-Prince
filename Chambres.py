@@ -1,10 +1,10 @@
-#%%
 from inventory import Inventory
 from objet import Objet
-#%%
+from colorpalette import couleurs
+import text
 import random
+import pygame
 
-#%%
 class Room :
     """Classe qui définit les pièces du jeu."""
     
@@ -47,11 +47,34 @@ class Room :
         print(f"Vous entrez dans {self.name}")
         self.visited = True
         return True
+    
     def add_door(self, room):
         """Ajoute une porte vers une nouvelle pièce"""
         self.doors.append(room)
+
     def __str__(self):
         return f"{self.name} (pièce {self.color})"
+    
+    def show_room(self,screen):
+        """ Permet d'afficher la chambre dans laquelle se trouve le joueur sur l'interface graphique
+
+        Parameters:
+        -----------------
+        - screen : Surface
+            La surface sur laquelle on affiche la chambre (écran du jeu)
+        """
+        width = screen.get_width()//2
+        height = screen.get_height()//2 
+        chambre = pygame.Surface((width,height))
+        chambre.fill(couleurs["darkblue"])
+        pygame.draw.rect(chambre,couleurs['brightblue'],pygame.Rect(0,0,width,height),width=15)
+        #pygame.draw.rect(chambre,"black",pygame.Rect(0,0,width,height),width=3)
+        
+        afficher = [f"Salle : {self.name}","------------------------------------------------------------------------------------------------"]
+                
+        text.texte(afficher,chambre,x=30,y=30,color="white",font=text.room_font,modifiers={0:'bold'})
+        
+        return chambre
 
 class Yellow(Room) :
     """Ce sont des magasins dans lesquels il est possible d'échanger de l'or contre d'autres objets."""

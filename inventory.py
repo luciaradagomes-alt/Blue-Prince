@@ -52,15 +52,22 @@ class Inventory:
         self.rabbit_foot = False
         self.metal_detector = False
 
-    def show_inventory(self):
+    def show_inventory(self,screen):
         """ Permet d'afficher l'inventaire du joueur sur l'interface graphique
+
+        Parameters:
+        -----------------
+        - screen : Surface
+            La surface sur laquelle on affiche l'inventaire (écran du jeu)
         """
-        inventaire = pygame.Surface((500,400))
+        width = screen.get_width()//2
+        height = screen.get_height()//2 - 60
+        inventaire = pygame.Surface((width,height))
         inventaire.fill(couleurs["darkblue"])
-        pygame.draw.rect(inventaire,couleurs['brightblue'],pygame.Rect(0,0,500,400),width=15)
-        pygame.draw.rect(inventaire,"black",pygame.Rect(0,0,500,400),width=3)
+        pygame.draw.rect(inventaire,couleurs['green'],pygame.Rect(0,0,width,height),width=15)
+        #pygame.draw.rect(inventaire,"black",pygame.Rect(0,0,width,height),width=3)
         
-        afficher = ["Inventaire","--------------------------------------------",
+        afficher = ["Inventaire","----------------------------------------------------------",
                     f"   Pas : {self.steps}", f"   Clés : {self.keys}", f"   Pièces : {self.coins}", f"   Gemmes : {self.gems}", f"   Dés : {self.dice}",""]
         if self.shovel:
             afficher.append(" - Pelle")

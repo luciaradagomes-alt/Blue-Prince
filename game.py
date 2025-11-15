@@ -5,10 +5,10 @@ from player import Player
 from map import Map
 from room_draw import RoomDraw
 from colorpalette import couleurs
-from Chambres import Yellow, Green
+from chambres import Yellow, Green
 
 pygame.init()
-screen = pygame.display.set_mode((1600, 900))
+screen = pygame.display.set_mode((1280, 720))
 pygame.display.set_caption("Manoir Mystère")
 centerx = screen.get_width() / 2
 centery = screen.get_height() / 2
@@ -18,8 +18,9 @@ running = True
 dt = 0
 
 game_state = 'title'
+
 titlecard = pygame.image.load("images\\titlecard.webp").convert()
-titlecard = pygame.transform.scale(titlecard, (1600, 900))
+titlecard = pygame.transform.scale(titlecard, (1280, 720))
 text.ligne_texte_centre("Appuyez sur ESPACE pour commencer",titlecard,offsety=200)
 
 background = pygame.image.load("images\\background.jpg").convert()
@@ -28,13 +29,28 @@ noir = pygame.Surface((1600,900))
 noir.fill([0,0,0])
 noir.set_alpha(10)
 
+def tutorial_screen(avant,droite):
+    # Ecran de tutoriel
+    tutorial_size = [screen.get_width() * 0.9, screen.get_height() * 0.9]
+    tutorial = pygame.Surface((tutorial_size[0],tutorial_size[1]))
+    
+    pygame.draw.rect(tutorial, couleurs['darkblue'], pygame.Rect(0,0, tutorial_size[0], tutorial_size[1]))
+    pygame.draw.rect(tutorial, couleurs['lightblue'], pygame.Rect(0,0, tutorial_size[0], tutorial_size[1]), width=10)
+    text.ligne_texte_centre("Comment jouer", tutorial, color=couleurs['lightblue'], offsety=-tutorial_size[1]//2+70, font=text.font3)
+    text.texte(["Vous commencez le jeu dans le hall d'entrée. Votre objectif est d'atteindre l'antichambre, à l'opposé du manoir.",
+                f"Utilisez les touches {avant}, {droite}, S et D pour vous déplacer entre les salles du manoir."], 
+                tutorial, 40, 120, color="white", font=text.font2, leading = 20, marge='same')
+    
+    return tutorial
+tutorial_size = [screen.get_width() * 0.9, screen.get_height() * 0.9]
+
 mansion = pygame.image.load("images\\mansion.webp").convert()
-mansion = pygame.transform.scale(mansion, (1600, 900))
+mansion = pygame.transform.scale(mansion, (1280, 720))
 
 # var de jeu
 game_map = None
 player = None
-inventory_show = False
+tutorial_show = False
 room_draw_system = None
 current_room_node = None
 show_room_interface = False
@@ -127,43 +143,18 @@ def draw_fog_of_war(surface, camera_offset):
 
 def draw_ui():
     """Dessine l'interface utilisateur (barre de stats)"""
-    # Barre en haut
-    ui_height = 60
-    pygame.draw.rect(screen, couleurs["darkblue"], pygame.Rect(0, 0, screen.get_width(), ui_height))
-    pygame.draw.rect(screen, couleurs["lightblue"], pygame.Rect(0, 0, screen.get_width(), ui_height), 3)
+    # Inventaire
+    screen.blit(player.inventory.show_inventory(screen), (screen.get_width() // 2, 0))
     
-    #statistiques
     font = text.inventory_font
-    x_offset = 20
-    
-    #pas
-    steps_text = font.render(f"Pas: {player.inventory.steps}", True, "white")
-    screen.blit(steps_text, (x_offset, 20))
-    x_offset += 150
-    
-    # clefs
-    keys_text = font.render(f"Clés: {player.inventory.keys}", True, "white")
-    screen.blit(keys_text, (x_offset, 20))
-    x_offset += 120
-    
-    # pieces
-    coins_text = font.render(f"Pièces: {player.inventory.coins}", True, "white")
-    screen.blit(coins_text, (x_offset, 20))
-    x_offset += 150
-    
-    # gems
-    gems_text = font.render(f"Gemmes: {player.inventory.gems}", True, "white")
-    screen.blit(gems_text, (x_offset, 20))
-    x_offset += 150
-    
-    # des
-    dice_text = font.render(f"Dés: {player.inventory.dice}", True, "white")
-    screen.blit(dice_text, (x_offset, 20))
-    
+
     # Salle actuelle
-    room_name_text = font.render(f"Salle: {current_room_node.room.name}", True, "white")
-    screen.blit(room_name_text, (screen.get_width() - 400, 20))
-    
+    screen.blit(current_room_node.room.show_room(screen), (screen.get_width() // 2, screen.get_height() // 2 - 60))
+
+    # Instructions
+    text.ligne_texte("I: Tutoriel | E: Entrer | O: Ramasser (test) | T: Tirer des pièces",screen,screen.get_width() // 2 + 15,screen.get_height() - 55, sep="| ",font=text.inventory_font)
+            
+
     # messages temporaires a render
     if message_timer > 0:
         message_surface = pygame.Surface((600, 80))
@@ -202,8 +193,7 @@ def enter_current_room():
     global show_room_interface, current_room_node
     
     room = current_room_node.room
-    
-    
+        
     if not room.visited:
         room.visited = True
     
@@ -324,6 +314,9 @@ while running:
         
         if event.type == pygame.KEYDOWN:
             
+            if event.key == pygame.K_ESCAPE:
+                    running = False
+
             if game_state == "title":
                 if event.key == pygame.K_SPACE:
                     game_state = "choix_clavier"
@@ -335,23 +328,29 @@ while running:
                     key_gauche = pygame.K_a
                     key_arriere = pygame.K_s
                     key_droite = pygame.K_d
-                    game_state = "jeu"
-                    init_game()
+                    game_state = "tutorial"
+                    tutorial = tutorial_screen("W","A")
+                    dt = 0
                 elif event.key == pygame.K_2:
                     key_avant = pygame.K_z
                     key_gauche = pygame.K_q
                     key_arriere = pygame.K_s
                     key_droite = pygame.K_d
-                    game_state = "jeu"
-                    init_game()
-            
+                    game_state = "tutorial"
+                    tutorial = tutorial_screen("Q","Z")
+                    dt = 0
+                    
+            elif game_state == "tutorial":
+                game_state = "jeu"
+                init_game()
+
             elif game_state == "jeu":
                 if event.key == pygame.K_i:
-                    inventory_show = not inventory_show
+                    tutorial_show = not tutorial_show
                     dt = 0
                 
                 # Déplacements (seulement si pas en mouvement et pas dans l'inventaire)
-                if not player.is_moving and not inventory_show:
+                if not player.is_moving and not tutorial_show:
                     if event.key == key_avant:
                         handle_movement(0, -1)
                     elif event.key == key_arriere:
@@ -362,15 +361,15 @@ while running:
                         handle_movement(1, 0)
                 
                 # Entrer dans la salle
-                if event.key == pygame.K_e and not inventory_show:
+                if event.key == pygame.K_e and not tutorial_show:
                     enter_current_room()
                 
                 # Tirer des pièces
-                if event.key == pygame.K_t and not inventory_show:
+                if event.key == pygame.K_t and not tutorial_show:
                     show_message("Système de tirage - À implémenter avec interface graphique")
                 
                 # Ramasser des objets (pour tester)
-                if event.key == pygame.K_o and not inventory_show:
+                if event.key == pygame.K_o and not tutorial_show:
                     # Test: ajouter des objets aléatoires
                     import random
                     items = ["pièce", "gemme", "clé", "banane", "pelle"]
@@ -380,7 +379,7 @@ while running:
                 
                 # Debug
                 # Déplacements (seulement si pas en mouvement et pas dans l'inventaire)
-                if not player.is_moving and not inventory_show:
+                if not player.is_moving and not tutorial_show:
                     if event.key == key_avant:
                         handle_movement(0, -1)
                     elif event.key == key_arriere:
@@ -391,15 +390,15 @@ while running:
                         handle_movement(1, 0)
                 
                 # Entrer dans la salle
-                if event.key == pygame.K_e and not inventory_show:
+                if event.key == pygame.K_e and not tutorial_show:
                     enter_current_room()
                 
                 # Tirer des pièces
-                if event.key == pygame.K_t and not inventory_show:
+                if event.key == pygame.K_t and not tutorial_show:
                     show_message("Système de tirage - À implémenter avec interface graphique")
                 
                 # Ramasser des objets (pour tester)
-                if event.key == pygame.K_o and not inventory_show:
+                if event.key == pygame.K_o and not tutorial_show:
                     # Test: ajouter des objets aléatoires
                     import random
                     items = ["pièce", "gemme", "clé", "banane", "pelle"]
@@ -418,7 +417,7 @@ while running:
             elif game_state == "perdu" or game_state == "gagne":
                 if event.key == pygame.K_SPACE:
                     game_state = "title"
-                    inventory_show = False
+                    tutorial_show = False
                 elif event.key == pygame.K_ESCAPE:
                     running = False
 
@@ -443,19 +442,27 @@ while running:
                          screen, -300, -100, font=text.font2)
         pygame.display.flip()
         
+    elif game_state == "tutorial":
+        dt += frame_dt
+        if dt <= 250:
+            screen.blit(noir, (0, 0))
+        screen.blit(tutorial, (centerx - tutorial_size[0] // 2, centery -  tutorial_size[1] // 2))
+        text.ligne_texte_centre("Appuyez sur une touche pour jouer",screen,offsety=tutorial_size[1] // 2+15,font=text.inventory_font,modifier='bold')
+        pygame.display.flip()
+
     elif game_state == "jeu":
-        if inventory_show:
+        
+        if tutorial_show:
             dt += frame_dt
-            if dt <= 250:
+            if dt <= 600:
                 screen.blit(noir, (0, 0))
-            screen.blit(player.inventory.show_inventory(), (400, 250))
+            screen.blit(tutorial, (centerx - tutorial_size[0] // 2, centery -  tutorial_size[1] // 2))
             
             # Instructions pour fermer
-            help_text = text.inventory_font.render("Appuyez sur I pour fermer l'inventaire", 
-                                                   True, "white")
-            screen.blit(help_text, (centerx - 150, 700))
+            text.ligne_texte_centre("Appuyez sur I pour fermer le tutoriel",screen,offsety=tutorial_size[1] // 2+15,font=text.inventory_font,modifier='bold')
             
             pygame.display.flip()
+
         else:
             # mettre à jour le joueur
             player.update(frame_dt / 1000.0)
@@ -473,12 +480,6 @@ while running:
             
             # Dessiner l'UI
             draw_ui()
-            
-            # Instructions
-            help_text = text.inventory_font.render(
-                "I: Inventaire | E: Entrer | O: Ramasser (test) | T: Tirer des pièces", 
-                True, "white")
-            screen.blit(help_text, (20, screen.get_height() - 30))
             
             pygame.display.flip()
 
@@ -520,8 +521,8 @@ while running:
         
         screen.blit(mansion,(0,0))
 
-        text.ligne_texte_centre("Vous avez gagné !",screen,color="white",font=text.room_font)
-        text.ligne_texte_centre("Appuyez sur ESC pour quitter ou SPACE pour rejouer",screen,color="white",font=text.font2,offsety=100)
+        text.ligne_texte_centre("Vous avez gagné !",screen,color="white",font=text.font4)
+        text.ligne_texte_centre("Appuyez sur ESC pour quitter ou SPACE pour rejouer",screen,color="white",font=text.font2,offsety=100,modifier='bold')
 
         pygame.display.flip()
 

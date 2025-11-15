@@ -4,7 +4,7 @@ import os
 import random
 from tile import Tile
 from door import Door, RoomNode
-from Chambres import Room, Yellow, Green
+from chambres import Room, Yellow, Green
 
 class Map:
     def __init__(self):

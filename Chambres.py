@@ -5,8 +5,23 @@ import text
 import random
 import pygame
 
-class Room :
-    """Classe qui définit les pièces du jeu."""
+class Room:
+    """Classe qui définit les pièces du jeu. Classe abstraite.
+    
+    Attributes
+    - possible : list[str] <<class attribute>>
+        Liste de toutes les salles dans notre jeu
+    - name : str
+        Le nom de la pièce
+    - image : Surface
+        L'image pour la représenter dans l'interface graphique
+    - color : str
+        La couleur de la pièce (chaque couleur représente une catégorie de pièce)
+    - visited : bool
+        Indique si la pièce a déjà été visitée
+    - doors : list[]
+        Liste des pièces qui peuvent être accédées à travers la pièce actuelle
+    """
     
     possible = ["Commissary", "Kitchen", "Locksmith", "Laundry Room", "Bookshop", "The Armory", "Showroom", "Mount Holly Gift Shop",
                 "Terrace", "Patio", "Courtyard", "Cloister", "Veranda", "Greenhouse", "Morning Room", "Secret Garden",
@@ -21,6 +36,7 @@ class Room :
         self.color = color
         self.visited = False # False si la pièce n'a pas encore été visité, True sinon
         self.doors = [] # Liste des pièces qui peuvent être accédées à travers la pièce actuelle
+        self.message = ""
     
     @property
     def name(self):
@@ -43,13 +59,23 @@ class Room :
 
   
     def enter_room(self, inventory):
-        """Ajoute des effets lorsque le joueur rentre dans la pièce"""
+        """Ajoute des effets lorsque le joueur rentre dans la pièce
+        
+        Parameters:
+        - inventory : Inventory
+            L'inventaire du joueur
+        """
         print(f"Vous entrez dans {self.name}")
         self.visited = True
         return True
     
     def add_door(self, room):
-        """Ajoute une porte vers une nouvelle pièce"""
+        """Ajoute une porte vers une nouvelle pièce
+        
+        Parameters:
+        - room : Room
+            La pièce vers laquelle on ajoute une porte
+        """
         self.doors.append(room)
 
     def __str__(self):
@@ -59,18 +85,16 @@ class Room :
         """ Permet d'afficher la chambre dans laquelle se trouve le joueur sur l'interface graphique
 
         Parameters:
-        -----------------
         - screen : Surface
             La surface sur laquelle on affiche la chambre (écran du jeu)
         """
-        width = screen.get_width()//2
+        width = screen.get_width() - 640
         height = screen.get_height()//2 
         chambre = pygame.Surface((width,height))
         chambre.fill(couleurs["darkblue"])
         pygame.draw.rect(chambre,couleurs['brightblue'],pygame.Rect(0,0,width,height),width=15)
-        #pygame.draw.rect(chambre,"black",pygame.Rect(0,0,width,height),width=3)
         
-        afficher = [f"Salle : {self.name}","------------------------------------------------------------------------------------------------"]
+        afficher = [f"Salle : {self.name}","------------------------------------------------------------------------------------------------",self.message]
                 
         text.texte(afficher,chambre,x=30,y=30,color="white",font=text.room_font,modifiers={0:'bold'})
         
@@ -178,12 +202,12 @@ class Yellow(Room) :
     def enter_room(self, inventory : Inventory) :
         """Interface pour rentrer dans les magasins ou pièces jaunes."""
         
-        print(f"\nVous êtes dans {self.name}.")
+        self.message = f"\nVous êtes dans {self.name}."
 
         if self.name == "Laundry Room" :
             return self.display_services(inventory)
         
-        print("\nSouhaitez-vous entrer au magasin ?")
+        self.message += "\nSouhaitez-vous entrer au magasin ?"
 
         response = ''
         while response != 'o' and response != 'n' :

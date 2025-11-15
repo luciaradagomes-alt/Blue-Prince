@@ -7,7 +7,6 @@ class Inventory:
     """ Classe qui contient les objets dans l'inventaire du joueur.
 
     Attributes:
-    ---------------
     - steps : int
         Le nombre de pas restants au joueur
     - coins : int
@@ -56,16 +55,14 @@ class Inventory:
         """ Permet d'afficher l'inventaire du joueur sur l'interface graphique
 
         Parameters:
-        -----------------
         - screen : Surface
             La surface sur laquelle on affiche l'inventaire (écran du jeu)
         """
-        width = screen.get_width()//2
+        width = screen.get_width() - 640
         height = screen.get_height()//2 - 60
         inventaire = pygame.Surface((width,height))
         inventaire.fill(couleurs["darkblue"])
         pygame.draw.rect(inventaire,couleurs['green'],pygame.Rect(0,0,width,height),width=15)
-        #pygame.draw.rect(inventaire,"black",pygame.Rect(0,0,width,height),width=3)
         
         afficher = ["Inventaire","----------------------------------------------------------",
                     f"   Pas : {self.steps}", f"   Clés : {self.keys}", f"   Pièces : {self.coins}", f"   Gemmes : {self.gems}", f"   Dés : {self.dice}",""]
@@ -96,24 +93,17 @@ class Inventory:
         """ Définit les actions réalisées lorsqu'on ramasse un objet dans le manoir
 
         Parameters:
-        ---------------
         - object : Objet
             L'objet qui est recueilli
         - nb : int (optional)
             Le nombre d'objets (1 par défaut)
 
         Raises:
-        ---------------
-            TypeError: Si l'argument n'est pas un objet
+        - TypeError: Si l'argument n'est pas un objet
         """
         if type(object) != Objet:
             raise TypeError("Ce n'est pas un objet")
         
-        message = f"Trouvé: {nb} {object}"
-        if nb != 1:
-            message += "s"
-        text.afficher_message_temps(message,screen)
-
         if object.food:
             self.steps += nb*object.steps
 
@@ -193,20 +183,16 @@ class Inventory:
         if object.name == "détecteur de métal":
             self.metal_detector = True
 
-    def buy(self,object):
-        """ Permet au joueur d'acheter un objet, sous condiiton qu'il ait assez de pièces
+    def buy(self,room):
+        """ Permet au joueur d'acheter un objet, sous condition qu'il ait assez de pièces
 
-        Paramètres:
-            object (_type_): _description_
+        Parameters:
+        - room : Room
+            Salle dans laquelle on cherche à acheter l'objet
 
         Raises:
-            TypeError: _description_
-
-        Returns:
-            _type_: _description_
+        - TypeError : si on ne se trouve pas dans un marché (salle jaune) 
         """
-        if type(object) != Objet:
-            raise TypeError("Ce n'est pas un objet")
         
         if self.coins < object.price:
             return ("Vous n'avez pas assez de pièces !")
@@ -223,7 +209,6 @@ class Inventory:
         """ Permet au joueur d'ouvrir une porte
 
         Parameters:
-        ---------------
         - niveau : int
             Indique combien de clés le joueur devra dépenser pour ouvrir cette porte
         """

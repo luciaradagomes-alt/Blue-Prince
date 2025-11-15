@@ -6,6 +6,7 @@ font1 = pygame.font.Font('fonts\\damned architect.ttf',32)
 font2 = pygame.font.SysFont('couriernew',24)
 font3 = pygame.font.SysFont('franklingothicdemicond',54)
 font4 = pygame.font.SysFont('franklingothicdemicond',128)
+font5 = pygame.font.SysFont('couriernew',20)
 
 room_font = pygame.font.SysFont('franklingothic',28)
 inventory_font = pygame.font.SysFont('couriernew',16)
@@ -18,8 +19,7 @@ inventory_font = pygame.font.SysFont('couriernew',16)
 def ligne_texte(txt,screen,x,y,color="white",font=font1,modifier=None,marge=10,sep=" "):
     """ Ajoute à une Surface pygame une ligne de texte. Si la ligne est supérieure à la largeur de la Surface, elle est séparée en 2 lignes.
 
-    Paramètres
-    ---------------
+    Parameters
     - txt : str
         Texte à afficher
     - screen (Surface): 
@@ -65,15 +65,14 @@ def ligne_texte(txt,screen,x,y,color="white",font=font1,modifier=None,marge=10,s
         mots = txt.rsplit(sep,maxsplit=1)
         txt = mots[0]
         if len(mots) > 1:
-            txt_fin = mots[1] + " " + txt_fin
-    texte([txt,txt_fin],screen,x,y,color,font,modifiers={0:modifier,1:modifier})
+            txt_fin = mots[1] + sep + txt_fin
+    texte([txt,txt_fin],screen,x,y,color,font,modifiers={0:modifier,1:modifier},marge=marge)
     
                 
 def texte(txt,screen,x,y,color="white",font=font1,modifiers={},marge=10,leading=0):
     """ Ajoute à une Surface pygame plusieurs ligne de texte.
 
-    Paramètres
-    ---------------
+    Parameters
     - txt : list[str]
         Liste des lignes de texte à afficher
     - screen (Surface): 
@@ -89,7 +88,7 @@ def texte(txt,screen,x,y,color="white",font=font1,modifiers={},marge=10,leading=
     - modifiers : dict[int:str]
         Pour chaque ligne de texte à modifier, définit si le texte doit être affiché en gras, italique ou souligné
         Les clés du dictionnaire représentent l'index de la ligne à modifier
-    - marge : dict{int:int | str} | int | str (optional)
+    - marge : dict{int : int | float | str} | int | float | str (optional)
         Espace qui reste à gauche du texte, 10 par défaut
         Peut aussi être 'same', qui affecte la valeur de x à la marge
     - leading : int (optional)
@@ -99,29 +98,30 @@ def texte(txt,screen,x,y,color="white",font=font1,modifiers={},marge=10,leading=
         for i in range(len(txt)):
             if i not in modifiers.keys():
                 modifiers[i] = None
-    if type(marge) in (int,str):
+    if type(marge) in (int,str,float):
         marge_ind = marge
         marge = {}
         for i in range(len(txt)):
             if i not in marge.keys():
                 marge[i] = marge_ind
-    if len(marge) != len(txt):
+    elif len(marge) != len(txt):
         for i in range(len(txt)):
             if i not in marge.keys():
-                modifiers[i] = 10
+                marge[i] = 'same'
 
     _,height = font.size(txt[0]) 
     for i in range(len(txt)):
         ligne_texte(txt[i],screen,x,y,color,font,modifiers[i],marge[i])
-        nb_lignes = font.size(txt[i])[0]//(screen.get_width() - x) + 1
+        if marge[i] == 'same':
+            marge[i] = x
+        nb_lignes = font.size(txt[i])[0]//(screen.get_width() - x - marge[i]) + 1
         y += nb_lignes * height + leading
 
 
 def ligne_texte_centre(txt,screen,offsetx=0,offsety=0,color="white",font=font1,modifier=None):
     """ Ajoute à une Surface pygame une ligne de texte, par défaut centralisée.
 
-    Paramètres
-    ---------------
+    Parameters
     - txt : str
         Texte à afficher
     - screen (Surface): 
@@ -145,8 +145,7 @@ def ligne_texte_centre(txt,screen,offsetx=0,offsety=0,color="white",font=font1,m
 def texte_centre(txt,screen,offsetx=0,offsety=0,color="white",font=font1,modifiers={}):
     """ Ajoute à une Surface pygame plusieurs lignes de texte, par défaut centralisées.
 
-    Paramètres
-    ---------------
+    Parameters
     - txt : list[str] | str
         Liste des lignes de texte à afficher
     - screen (Surface): 
@@ -182,8 +181,7 @@ def texte_centre(txt,screen,offsetx=0,offsety=0,color="white",font=font1,modifie
 def afficher_message_temps(txt,screen,time=1000,font=font3):
     """ Permet d'afficher un message au centre l'interface graphique pendant un temps donné.
 
-    Paramètres
-    ---------------
+    Parameters
     - txt : list[str] | str
         Liste des lignes de texte à afficher
     - screen (Surface): 
@@ -204,8 +202,7 @@ def afficher_message_temps(txt,screen,time=1000,font=font3):
 def afficher_message(txt,screen,font=font3): # à FINIR
     """ Permet d'afficher un message au centre l'interface graphique.
 
-    Paramètres
-    ---------------
+    Parameters
     - txt : list[str] | str
         Liste des lignes de texte à afficher
     - screen (Surface): 
@@ -226,8 +223,7 @@ def afficher_message(txt,screen,font=font3): # à FINIR
 def afficher_salle(room,screen):
     """ Permet d'afficher le nom d'une salle sur l'interface graphique.
 
-    Paramètres
-    ---------------
+    Parameters
     - room : Room
         Nom de la chambre à afficher
     - screen (Surface): 

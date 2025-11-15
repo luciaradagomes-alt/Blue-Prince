@@ -23,8 +23,8 @@ class RoomDraw:
     def set_available_rooms(self, rooms_by_color):
         """Initialise le pool de salles disponibles
         
-        Args:
-            rooms_by_color: dict {"blue": [Room1, Room2], "red": [...], ...}
+        Parameters:
+        - rooms_by_color: dict {"blue": [Room1, Room2], "red": [...], ...}
         """
         self.available_rooms = []
         for color, rooms in rooms_by_color.items():

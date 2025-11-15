@@ -4,7 +4,6 @@ class Objet:
     """ Classe qui définit la nature des objets contenus dans le jeu
 
     Attributes:
-    ---------------
     - possible : list[str] <<class attribute>>
         Liste de tous les objets dans notre jeu
     - name : str

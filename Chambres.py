@@ -1,104 +1,13 @@
-#%%
 from inventory import Inventory
 from objet import Objet
-import pygame
+from colorpalette import couleurs
+import text
 import random
+import pygame
+from abc import ABC, abstractmethod
 
-#%%
-class RoomGrid:
-    """Gère les grille 9x9 des pièces"""
 
-    def __init__(self, room_name, entry_door):
-        self.grid_size = 9
-        self.tile_size = 64
-        self.room_name = room_name
-        self.entry_door = entry_door
-        self.grid = [["empty" for _ in range(self.grid_size)] for _ in range(self.grid_size)]
-        self.player_position = self.get_player_init_position()
-        self.apply_room_data()
-        self.active = True
-        
-    def get_player_init_position(self) :
-        """Récupère la position initiale du joueur, en fonction de la porte ouverte."""
-        center = self.grid_size // 2
-
-        if self.entry_door == "north":
-            return [center, self.grid_size - 1]
-        if self.entry_door == "south":
-            return [center, 0] 
-        if self.entry_door == "east":
-            return [self.grid_size - 1, center] 
-        if self.entry_door == "west":
-            return [0, center] 
-        # fallback par défaut
-        return [center, center]
-
-    def grid_init(self):
-        """Initialisation de la grille de la pièce."""
-        grid = [["empty" for _ in range(self.grid_size)] for _ in range(self.grid_size)]
-
-        # dig spots
-        for (x, y) in getattr(self.room, "dig_spots_position", []):
-            if 0 <= x < self.grid_size and 0 <= y < self.grid_size:
-                grid[y][x] = "dig"
-
-        px, py = self.player_position
-        grid[py][px] = "player"
-
-        return grid
-
-    def apply_room_data(self):
-        """Gère les endroits à creuser, les coffres et les lockers."""
-        dig_positions = getattr(self.room_name, "dig_spots_position", [])
-        chest_position = getattr(self.room_name, "chest_spots_position", [])
-        locker_position = getattr(self.room_name, "locker_spots_position", [])
-
-        # Endroits pour creuser :
-        for (x, y) in dig_positions:
-            if 0 <= x < self.grid_size and 0 <= y < self.grid_size:
-                self.grid[y][x] = "dig"
-
-        # Coffres :
-        for (x, y) in chest_position:
-            if 0 <= x < self.grid_size and 0 <= y < self.grid_size:
-                self.grid[y][x] = "chest"
-
-        # Lockers :
-        for (x, y) in locker_position:
-            if 0 <= x < self.grid_size and 0 <= y < self.grid_size:
-                self.grid[y][x] = "locker"
-
-        # Player position
-        px, py = self.player_pos
-        self.grid[py][px] = "player"
-    
-    def move(self, dx, dy):
-        """Gère le mouvement du joueur sur la grille."""
-        px, py = self.player_pos
-        nx, ny = px + dx, py + dy
-
-        # limites de la pièce
-        if not (0 <= nx < self.grid_size and 0 <= ny < self.grid_size):
-            return
-
-        
-        self.grid[py][px] = "empty"
-        self.grid[ny][nx] = "player"
-        self.player_pos = [nx, ny]
-
-    def draw(self, surface):
-        """Dessine la grille, ou implémente la grille"""
-
-    def player_is_on_door(self):
-        """Gère la sortie de la pièce du joueur"""
-        px, py = self.player_pos
-        mid = self.GRID_SIZE // 2
-        return (px, py) in [
-            (mid, 0), (mid, self.GRID_SIZE-1),
-            (0, mid), (self.GRID_SIZE-1, mid)
-        ]
-
-class Room :
+class Room(ABC) :
     """Classe qui définit les pièces du jeu."""
     
     possible = ["Commissary", "Kitchen", "Locksmith", "Laundry Room", "Bookshop", "The Armory", "Showroom", "Mount Holly Gift Shop",
@@ -112,53 +21,77 @@ class Room :
     def __init__(self, name : str, color : str):
         self.name = name
         self.color = color
-        self.visited = False # False si la pièce n'a pas encore été visité, True sinon
-        self.doors = [] # Liste des pièces qui peuvent être accédées à travers la pièce actuelle
-
+        self.visited = False 
+        self.doors = [] 
+        self.message = None
     @property
     def name(self):
         return self.__name
     
     @name.setter
     def name(self, name):
-        # MODIFICATION: rendre plus permissif pour les noms nettoyés
         if name not in Room.possible:
-            # Essayer de trouver une correspondance approximative
             name_cleaned = name.replace("_", " ").title()
             if name_cleaned in Room.possible:
                 self.__name = name_cleaned
                 return
-            # Si toujours pas trouvé, accepter quand même (pour le développement)
-            print(f"Attention: '{name}' n'est pas dans la liste des salles possibles")
+            message=f"Attention: '{name}' n'est pas dans la liste des salles possibles"
             self.__name = name
         else:
             self.__name = name
-
-  
-    def enter_room(self):
-        """Ajoute des effets lorsque le joueur rentre dans la pièce"""
-        print(f"Vous entrez dans {self.name}")
-        self.visited = True
-        return True
     
+    @abstractmethod
+    def enter_room(self):
+        pass
     def add_door(self, room):
         """Ajoute une porte vers une nouvelle pièce"""
         self.doors.append(room)
     
     def __str__(self):
         return f"{self.name} (pièce {self.color})"
+    
+    def show_room(self,screen):
+        """ Permet d'afficher la chambre dans laquelle se trouve le joueur sur l'interface graphique
+
+        Parameters:
+        -----------------
+        - screen : Surface
+            La surface sur laquelle on affiche la chambre (écran du jeu)
+        """
+        width = screen.get_width()//2
+        height = screen.get_height()//2 
+        chambre = pygame.Surface((width,height))
+        chambre.fill(couleurs["darkblue"])
+        pygame.draw.rect(chambre,couleurs['brightblue'],pygame.Rect(0,0,width,height),width=15)
+        #pygame.draw.rect(chambre,"black",pygame.Rect(0,0,width,height),width=3)
+        
+        afficher = [f"Salle : {self.name}","------------------------------------------------------------------------------------------------"]
+                
+        text.texte(afficher,chambre,x=30,y=30,color="white",font=text.room_font,modifiers={0:'bold'})
+        
+        return chambre
 
 class Yellow(Room) :
-    """Ce sont des magasins dans lesquels il est possible d'échanger de l'or contre d'autres objets."""
+    """Ce sont des magasins dans lesquels il est possible d’échanger de l’or contre d’autres objets.
+
+    Attributes:
+    ---------------
+    - rooms : list[str] <<class attribute>>
+        Liste de toutes les pièces vertes
+    - cost : int
+        Coût de la pièce lors du tirage
+    - items_for_sale : dict
+        Items en vente dans le magasin
+    - services : dict
+        Services de la laverie
+    """
     
     rooms = ["Commissary", "Kitchen", "Locksmith", "Laundry Room", "Bookshop", "The Armory", "Showroom", "Mount Holly Gift Shop"]
     
     def __init__(self, name:str):
-        super().__init__(name, "jaune")
+        super().__init__(name, "yellow")
+        self.cost = self.gem_cost()
         self.items_for_sale = self.items()
-        self.restock_days = 1
-        
-        # Services du laundry room
         self.services = {
             "Essorage" : {"cost" : 5, "action" : "exchange_all_gems_with_all_gold"},
             "Lavage et séchage" : {"cost" : 5, "action" : "exchange_all_keys_with_all_gems"},
@@ -175,11 +108,7 @@ class Yellow(Room) :
                 "pelle" : 6, 
                 "marteau" : 8,
                 "détecteur de métal" : 10,
-                "clé" : 10,
-                "loupe" : 4,
-                "salière" : 5,
-                "compas" : 6,
-                "masque pour dormir" : 8
+                "clé" : 10
             }
             self.items_for_sale = dict(random.sample(list(items.items()), 4)) 
             return self.items_for_sale
@@ -191,15 +120,15 @@ class Yellow(Room) :
                 "bacon et oeufs" : 8,
                 "salade" : 5,
                 "soupe" : 5
-            } # Chaque jour un item spécial est proposé d'après le wiki
+            }
 
-            special_item = random.choice(list(special_items.keys())) # Choisit de façon aléatoire un seul de la liste 
+            special_item = random.choice(list(special_items.keys()))
 
             self.items_for_sale = {
                 "banane" : 2,
                 "sandwich" : 8,
                 special_item : special_items[special_item]
-            } # Les bananes et sandwichs sont toujours proposés
+            } 
             return self.items_for_sale
         
         elif self.name == "Locksmith" :
@@ -209,126 +138,163 @@ class Yellow(Room) :
             }
             return self.items_for_sale
         
-        elif self.name == "Showroom" : # Pour l'instant vide car nous n'avons pas implémenté les objets du showroom
+        elif self.name == "Showroom" :
             self.items_for_sale = {}
-            #items= { "moon pendant" : 20, "silver spoon" : 30, "chronograph" : 30, "ornate compass" : 50, "emerald bracelet" : 60, "master key" : 80, "trophy of wealth" : 100}
-            #self.items_for_sale = dict(random.sample(list(items.items(), 4)))
             return self.items_for_sale
         
-        elif self.name == "Bookshop" : # Pour l'instant vide car nous n'avons pas implémenté les objets de la bibliothèque
+        elif self.name == "Bookshop" : 
             self.items_for_sale = {}
-            #self.items_for_sale = {
-            #   "The History of Orindia (1st ed.)" : 50,
-            #    "A New Clue" : 50,
-            #    "The Curse of Black Bridge" : 40,
-            #    "Realm & Rune" : 20,
-            #    "Drafting Strategy Vol. 4" : 8,
-            #    "Drafting Strategy Vol. 5" : 8
-            #} 
             return self.items_for_sale
         
-        elif self.name == "The Armory" : # Pour l'instant presque vide car nous n'avons pas implémenté les objets de l'arsenal
+        elif self.name == "The Armory" : 
             self.items_for_sale = {
                 "pelle" : 30,
                 "kit de crochetage" : 20
             }
-            #items = {
-            #    "Morning Star" : 8,
-            #    "hache" : 32,
-            #    "Self Igniting Torch" : 8,
-            #    "Knight's Shield" : 8    
-            #}
-            #self.items_for_sale = dict(random.sample(list(items.items(), 3))) 
+            
             return self.items_for_sale
         
         elif self.name == "Mount Holly Gift Shop" :
             self.items_for_sale = {} 
             return self.items_for_sale
         else:
-            return {}  # Laundry room n'a pas d'items en vente donc dictionnaire vide pour ne pas causer de problèmes 
+            return {} 
+
+    def gem_cost(self):
+        """Indique le coût pour entrer dans la pièce"""
+        
+        cost = {"Commissary": 1, 
+                "Kitchen": 1, 
+                "Locksmith": 1, 
+                "Laundry Room": 1, 
+                "Bookshop": 1, 
+                "The Armory": 0, 
+                "Showroom": 2, 
+                "Mount Holly Gift Shop": 0
+            }
+        
+        return cost.get(self.name)
             
     def enter_room(self, inventory : Inventory) :
-        """Interface pour rentrer dans les magasins ou pièces jaunes."""
+        """Interface pour rentrer dans les magasins ou pièces jaunes.
         
-        print(f"\nVous êtes dans {self.name}.")
-
+        Parameters:
+        ---------------
+        - inventory : Inventory
+            L'inventaire du joueur
+        
+        """
         if self.name == "Laundry Room" :
             return self.display_services(inventory)
         
-        print("\nSouhaitez-vous entrer au magasin ?")
+        message= [f"Vous êtes dans {self.name}."]
+        if self.cost > 0 :
+            
+            reponse = ''
+            while reponse != 'o' and reponse != 'n':
+                message.append(f"Coût d'entrée : {self.cost} gemme/s.")
+                message.append(f"Souhaitez-vous dépenser {self.cost} gemme/s ?")
+                reponse = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
 
-        response = ''
-        while response != 'o' and response != 'n' :
-                response = input("\nTapez 'o' pour oui et 'n' pour non : ")
-        response = (response == 'o')
-        if response :
-            return self.shop_interface(inventory)
-        else :
-            print("\nPas d'achats pour le moment.")
-            return False
-        
+            reponse = pygame.event.get()
+            if reponse.key == pygame.K_o:
+                if inventory.gems < self.cost :
+                    message.append(f"Vous n'avez pas assez de gemmes. Vous êtes en manque de {self.cost - inventory.gems} gemme/s.")
+                    return False
+                message.append("Vous avez fait le bon choix !")
+                inventory.gems -= self.cost
+                if inventory.gems < 5 :
+                    message.append("Économisez bien vos gemmes ! Vous n'en avez à peine :(")
+                return self.shop_interface(inventory)
+            else:    
+                message.append("Pas de shopping pour le moment.")
+                return False
+             
     def shop_interface(self, inventory : Inventory) :
-        """Interface générale des magasins"""
+        """Interface générale des magasins
+        
+        Parameters:
+        ---------------
+        - inventory : Inventory
+            L'inventaire du joueur
+        
+        """
+        message= [f"Vous êtes dans {self.name}."]
         if self.name == "Commissary" :
-            print("\nMagasin du commissariat : ") 
+            message.append("\nMagasin du commissariat : ") 
         elif self.name == "Kitchen" :
-            print("\nNourriture dans le frigo : ")
+            message.append("\nNourriture dans le frigo : ")
         elif self.name == "Locksmith" :
-            print("\nMagasin de la serrurerie : ")
+            message.append("\nMagasin de la serrurerie : ")
         elif self.name == "Showroom" :
-            print("\nObjets en vente de la salle d'exposition : ")
+            message.append("\nObjets en vente de la salle d'exposition : ")
         elif self.name == "Laundry Room" :
-            print("\nServices de la laverie :")
+            message.append("\nServices de la laverie :")
             self.display_services(inventory)
             return self.interaction_with_services(inventory)
         elif self.name == "Bookshop" :
-            print("\nLivres en vente :")
+            message.append("\nLivres en vente :")
         elif self.name == "The Armory" :
-            print("\nArmes en vente :")
+            message.append("\nArmes en vente :")
         else :
-            print("\nSouvenirs en vente :")
+            message.append("\nSouvenirs en vente :")
 
         self.display_items(inventory)
         return self.interaction_with_items(inventory)
 
     def display_items(self, inventory : Inventory) :
-        """Affiche les objets disponible dans le magasin"""
+        """Affiche les objets disponible dans le magasin
+        
+        Parameters:
+        ---------------
+        - inventory : Inventory
+            L'inventaire du joueur
+        
+        """
+        message= [f"Vous êtes dans {self.name}."]
         if not self.items_for_sale :
-            print("\nLe magasin est en rupture de stock, nous sommes désolés :(")
+            message.append("\nLe magasin est en rupture de stock, nous sommes désolés :(")
             return
         
         items_list = list(self.items_for_sale.items())
         for item, price in items_list:
-            print(f"{item:.<18} {price} pièces")
-        print("\nAnnuler :(")
-        print(f"\nVotre argent : {inventory.coins} pièces")
+            message.append(f"{item:.<18} {price} pièces")
+        message.append("\nAnnuler :(")
+        message.append(f"\nVotre argent : {inventory.coins} pièces")
 
     def interaction_with_items(self, inventory : Inventory) :
-        """Gère les intéractions dans un magasin"""
+        """Gère les intéractions dans un magasin
+        
+        Parameters:
+        ---------------
+        - inventory : Inventory
+            L'inventaire du joueur
+        
+        """
+        message= [f"Vous êtes dans {self.name}."]
         while True :
-            print("\nQue souhaitez-vous acheter ?")
+            message.append("\nQue souhaitez-vous acheter ?")
             items_list = list(self.items_for_sale.items())
             if not items_list:
-                print("\nPlus rien à acheter ici revenez demain !")
+                message.append("\nPlus rien à acheter ici revenez demain !")
                 return False
             for i, (item, price) in enumerate(items_list, 1):
-                print(f"  {i}. {item:.<18} {price} pièces")
-            print(f"  {len(items_list) + 1}. Annuler")
+                message.append(f"  {i}. {item:.<18} {price} pièces")
+            message.append(f"  {len(items_list) + 1}. Annuler")
             try:
                 response = int(input(f"Votre choix (1-{len(items_list) + 1}): "))
                 
                 if response == len(items_list) + 1:
-                    print("Achat annulé")
+                    message.append("Achat annulé")
                     return False
                 
-                # CORRECTION: 1 <= response au lieu de 1 < response
                 if 1 <= response <= len(items_list):
                     item_name, price = items_list[response - 1]
                     if inventory.coins < price: 
-                        print("\nVous n'avez pas assez d'argent !")
-                        continue  # Continuer plutôt que retourner False
+                        message.append("\nVous n'avez pas assez d'argent !")
+                        continue 
                     
-                    print(f"\nVous êtes sûr(e) de vouloir acheter un/e {item_name} pour {price} pièces ?")
+                    message.append(f"\nVous êtes sûr(e) de vouloir acheter un/e {item_name} pour {price} pièces ?")
                     confirm = ''
                     while confirm != "o" and confirm != 'n':
                         confirm = input("Tapez 'o' pour oui et 'n' pour non: ")
@@ -336,40 +302,50 @@ class Yellow(Room) :
                     if confirm == 'o':
                         inventory.coins -= price
                         inventory.pick_up(Objet(item_name))
-                        print(f"\nAchat réussi! Argent restant: {inventory.coins}")
+                        message.append(f"\nAchat réussi!")
                         return True
                     else:
-                        print("Achat annulé.")
+                        message.append("Achat annulé.")
                         return False
                 else:
-                    print("Choix invalide!")
+                    message.append("Choix invalide!")
             
             except ValueError:
-                print("Veuillez entrer un nombre valide!")
+                message.append("Veuillez entrer un nombre valide!")
 
     def laundry_interface(self, inventory: Inventory):
-        """Interface spécifique pour la laverie qui ne propse que des services (pas d'items)"""
+        """Interface spécifique pour la laverie qui ne propose que des services (pas d'items)
+        
+        Parameters:
+        ---------------
+        - inventory : Inventory
+            L'inventaire du joueur
+        
+        """
         self.display_services(inventory)
         return self.interaction_with_services(inventory) 
      
     def display_services(self, inventory):
         """Affiche les services de la laverie"""
-
-        print("\nServices disponibles:")
+        message= [f"Vous êtes dans {self.name}."]
+        message.append("\nServices disponibles:")
         services_list = list(self.services.items())
 
         for i, (service, price) in enumerate(services_list, 1):
-            print(f"  {i}. {service:.<18} {price['cost']} pièces")
-
-        print(f"\nVotre argent : {inventory.coins} pièces")
-        print(f"\nVos clés : {inventory.keys}")
-        print(f"\nVos gemmes : {inventory.gems}")
+            message.append(f"  {i}. {service:.<18} {price['cost']} pièces")
 
     def interaction_with_services(self, inventory : Inventory) :
-        """Gère les services dans la laverie"""
-
+        """Gère les services dans la laverie
+        
+        Parameters:
+        ---------------
+        - inventory : Inventory
+            L'inventaire du joueur
+        
+        """
+        message= [f"Vous êtes dans {self.name}."]
         while True:
-            print("\nSouhaitez-vous utiliser un service ?")
+            message.append("\nSouhaitez-vous utiliser un service ?")
 
             response = ''
             while response != 'o' and response != 'n':
@@ -377,10 +353,10 @@ class Yellow(Room) :
             response = (response == 'o')
 
             if response :
-                print("\nChoisissez le service :")
-                print("\n1) Essorage")
-                print("\n2) Lavage et séchage")
-                print("\n3) Fluff and fold")
+                message.append("\nChoisissez le service :")
+                message.append("\n1) Essorage")
+                message.append("\n2) Lavage et séchage")
+                message.append("\n3) Fluff and fold")
 
                 response = ''
                 while response != '1' and response != '2' and response != '3' :
@@ -388,10 +364,10 @@ class Yellow(Room) :
                 services_list = list(self.services.items())
 
                 if response == '1':
-                    print(f"\nAvant : {inventory.coins} pièces et {inventory.gems} gemmes")
+                    message.append(f"\nAvant : {inventory.coins} pièces et {inventory.gems} gemmes")
                     service_name, action = services_list[0]
                     if inventory.coins < action["cost"] :
-                        print(f"Pas assez d'argent :(")
+                        message.append(f"Pas assez d'argent :(")
                         return
                     inventory.coins -= action["cost"]
                     
@@ -400,13 +376,13 @@ class Yellow(Room) :
                     inventory.coins = new_coins
                     inventory.gems = new_gems
 
-                    print("\nService complété ! Toutes vos gemmes ont été échangées par toutes vos pièces !")
-                    print(f"\nAprès : {inventory.coins} pièces et {inventory.gems} gemmes")
+                    message.append("\nService complété ! Toutes vos gemmes ont été échangées par toutes vos pièces !")
+                    message.append(f"\nAprès : {inventory.coins} pièces et {inventory.gems} gemmes")
                 elif response == '2' :
-                    print(f"\nAvant : {inventory.keys} clés et {inventory.gems} gemmes")
+                    message.append(f"\nAvant : {inventory.keys} clés et {inventory.gems} gemmes")
                     service_name, action = services_list[1]
                     if inventory.coins < action["cost"] :
-                        print(f"Pas assez d'argent :(")
+                        message.append(f"Pas assez d'argent :(")
                         return
                     inventory.coins -= action["cost"]
                     
@@ -415,13 +391,13 @@ class Yellow(Room) :
                     inventory.keys = new_keys
                     inventory.gems = new_gems
 
-                    print("\nService complété ! Toutes vos clés ont été échangées par toutes vos gemmes !")
-                    print(f"\nAprès : {inventory.keys} clés et {inventory.gems} gemmes")
+                    message.append("\nService complété ! Toutes vos clés ont été échangées par toutes vos gemmes !")
+                    message.append(f"\nAprès : {inventory.keys} clés et {inventory.gems} gemmes")
                 else:
-                    print(f"\nAvant : {inventory.keys} clés et {inventory.coins} pièces")
+                    message.append(f"\nAvant : {inventory.keys} clés et {inventory.coins} pièces")
                     service_name, action = services_list[2]
                     if inventory.coins < action["cost"] :
-                        print(f"Pas assez d'argent :(")
+                        message.append(f"Pas assez d'argent :(")
                         return
                     inventory.coins -= action["cost"]
                     
@@ -430,53 +406,748 @@ class Yellow(Room) :
                     inventory.keys = new_keys
                     inventory.coins = new_coins
 
-                    print("\nService complété ! Toutes vos clés ont été échangées par toutes vos pièces !")
-                    print(f"\nAprès : {inventory.keys} clés et {inventory.coins} pièces")
+                    message.append("\nService complété ! Toutes vos clés ont été échangées par toutes vos pièces !")
+                    message.append(f"\nAprès : {inventory.keys} clés et {inventory.coins} pièces")
                 
             else:
-                print("\nAu revoir !")
+                message.append("\nAu revoir !")
                 return True
 
-class Purple(Room):
-    rooms = ["Bedroom", "Boudoir", "Guest Bedroom", "Nursery", "Servant's Quarters", "Bunk Room", "Her Ladyship's Chamber", "Master Bedroom"] 
-    
+class Orange(Room):
+    """Ce sont des couloirs, qui ont souvent beaucoup de portes
+
+    Attributes:
+    ---------------
+    - rooms : list[str] <<class attribute>>
+        Liste de toutes les pièces oranges
+    - cost : int
+        Coût de la pièce lors du tirage
+    - dig_spots_available : int
+        Nombre d'endroits où creuser pour la pièce choisie
+    - chest_spots_available : bool
+        Nombre de coffres pour la pièce choisie
+    - locker_spots_available : bool
+        Nombre de casiers pour la pièce choisie
+    - available_items : dict
+        Dictionnaire de tous les items se retrouvant dans la pièce
+    """
+    rooms = ["Hallway", "West Wing Hall", "East Wing Hall", "Corridor", "Passageway", "Secret Passage", "Foyer", "Great Hall"]
+
     def __init__(self, name:str):
-        super().__init__(name, "red")
-        self.dig_spots_available = self.dig_spots() # Nombre d'endroits à creuser
-        self.dig_spots_position = self.dig_position() # Position des endroits à creuser s'il y en a
-        self.permanent_objects = None # objets permanents (ex: pelle)
-        self.available_items = self.items() # items que le joueur découvre en ouvrant des coffres, armoires etc. Ici, le joueur les obtient immédiatemment
-        self.cost = self.gem_cost() # Coût de la pièce
+        super().__init__(name, "orange")
+        self.cost = self.gem_cost()
+        self.dig_spots_available = self.dig_spots() 
+        self.chest_spots_available = self.chest_spots()
+        self.locker_spots_available = self.locker_spots()
+        self.available_items = self.items() 
         
-    def items(self):
-        """Génère les items des pièces"""
-        if self.name == "Bedroom":
-            room_items = {"pomme": 1, "dé": 1, "clé": 1, "gemme": 1, "pièce": 3, "coin purse":1, "masque pour dormir": 1}
+        
+    def items(self, inventory : Inventory):
+        """Indique les items de la pièce
+        
+        Parameters:
+        ---------------
+        - inventory : Inventory
+            L'inventaire du joueur
+        
+        """
+        room_items = {
+            "banane": 1, 
+            "orange": 1, 
+            "pomme" : 1, 
+            "gemme" : random.randint(1,3), 
+            "pièce": random.randint(1,3), 
+            "clé": random.randint(1,3), 
+            "dé": random.randint(1,3), 
+            "levier cassé":random.randint(1,3),
+            "pelle": 1,
+            "détecteur de métal": 1,
+            "marteau": 1, 
+            "patte de lapin": 1
+            }
+        
+        if inventory.shovel:
+            room_items["pelle"] = 0
+        if inventory.hammer:
+            room_items["marteau"] = 0
+        if inventory.lockpick_kit:
+            room_items["kit de crochetage"] = 0 
+        if inventory.rabbit_foot:
+            room_items["patte de lapin"] = 0
+        if inventory.metal_detector:
+            room_items["détecteur de métal"] = 0 
+            
+        if self.name == "Hallway":
             return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
-        elif self.name == "Boudoir":
-            room_items = {"pièce": random.choice([2, 3, 5]), "clé": random.randint(1,2), "gemme": 1, "coin purse": 1, "masque pour dormir": 1}
+        elif self.name == "West Wing Hall":
             return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
-        elif self.name == "Guest Bedroom":
-            room_items = {"clé": 1, "gemme": 1, "compas": 1}
-            return dict(random.sample(list(room_items.items()), 1)) 
-        elif self.name == "Nursery":
-            room_items = {"dé": 2, "clé": 1, "gemme": 1, "pièce": 3, "patte de lapin": 1}
-            return dict(random.sample(list(room_items.items()), 2)) 
-        elif self.name == "Servant's Quarters":
-            room_items = {"dé": 2, "gemme": 1, "levier cassé": 1, "détecteur de métal": 1, "pelle": 1}
-            return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
-        elif self.name == "Bunk Room":
-            room_items = {"banane": 2, "clé": 2, "gemme" : 2, "pièce": 4}
-            return dict(random.sample(list(room_items.items()), random.randint(1, 2))) 
-        elif self.name == "Her Ladyship's Chamber":
-            room_items = {"banane": 1, "patte de lapin": 1, "clé": 1, "gemme": 1, "pièce":5, "coin purse" : 1, "masque pour dormir": 1}
-            return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
-        elif self.name == "Master Bedroom":
-            room_items = {"dé": 2, "pièce": random.choice([4, 5, 9]), "clé": 1, "gemme":random.randint(1,3), "kit de crochetage": 1, "masque pour dormir" :1, "compas": 1}
+        elif self.name == "East Wing Hall":
+            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
+        elif self.name == "Corridor":
+            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
+        elif self.name == "Passageway":
+            return {}
+        elif self.name == "Secret Passage":
+            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
+        elif self.name == "Foyer":
+            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
+        elif self.name == "Great Hall":
             return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
 
     def gem_cost(self):
-        """Génère le coût pour entrer dans chaque pièce"""
+        """Indique le coût pour entrer dans la pièce pièce"""
+
+        cost = {
+            "Hallway": 0,
+            "West Wing Hall": 0,
+            "East Wing Hall": 0,
+            "Corridor": 0,
+            "Passageway": 2,
+            "Secret Passage": 1,
+            "Foyer": 2,
+            "Great Hall": 0
+            }
+        
+        return cost.get(self.name)
+
+    def dig_spots(self):
+        """Indique le nombre d'endroits où creuser dans la pièce"""
+
+        spots = {
+            "Hallway": 0,
+            "West Wing Hall": 0,
+            "East Wing Hall": 0,
+            "Corridor": 0,
+            "Passageway": 0,
+            "Secret Passage": 0,
+            "Foyer": 0,
+            "Great Hall": 0
+            }
+        
+        return spots.get(self.name)
+
+    def chest_spots(self):
+        """Génère un nombre de coffres dans la pièce"""
+
+        spots = {
+            "Hallway": 0,
+            "West Wing Hall": 0,
+            "East Wing Hall": 0,
+            "Corridor": 0,
+            "Passageway": 0,
+            "Secret Passage": 0,
+            "Foyer": 0,
+            "Great Hall": 0
+            }
+        
+        return spots.get(self.name)
+    
+    def locker_spots(self):
+        """Génère un nombre de lockers dans la pièce"""
+
+        spots = {
+            "Hallway": 0,
+            "West Wing Hall": 0,
+            "East Wing Hall": 0,
+            "Corridor": 0,
+            "Passageway": 0,
+            "Secret Passage": 0,
+            "Foyer": 0,
+            "Great Hall": 0
+            }
+        return spots.get(self.name)
+
+    def enter_room(self, inventory : Inventory) :
+        """Gère les intéractions dans la pièce
+        
+        Parameters:
+        ---------------
+        - inventory : Inventory
+            L'inventaire du joueur
+        
+        """
+
+        message = [f"Vous êtes dans {self.name} !"]
+        
+        if self.cost>0 :
+            reponse = ''
+            while reponse != 'o' and reponse != 'n':
+                message.append(f"Coût d'entrée : {self.cost} gemme/s.")
+                message.append(f"Souhaitez-vous dépenser {self.cost} gemme/s ?")
+                reponse = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
+
+            reponse = pygame.event.get()
+            if reponse.key == pygame.K_o:
+                if inventory.gems < self.cost :
+                    message.append(f"Vous n'avez pas assez de gemmes. Vous êtes en manque de {self.cost - inventory.gems} gemme/s.")
+                    return False
+                message.append("Vous avez fait le bon choix !")
+            else:    
+                message.append("Vous ne souhaitez pas explorer la pièce.")
+                return False
+            
+            inventory.gems -= self.cost
+            if inventory.gems < 5 :
+                message.append("Économisez bien vos gemmes ! Vous n'en avez à peine :(")
+        
+        if self.available_items and not self.visited :
+            for item_name, _ in self.available_items.items():
+                inventory.pick_up(Objet(item_name))
+        
+        if self.chest_spots_available>0:
+            for i in range(self.chest_spots_available):
+                inventory.pick_up("chest")
+        if self.locker_spots_available>0:
+            for i in range(self.locker_spots_available):
+                inventory.pick_up("locker") 
+
+        self.visited = True
+        return True
+
+class Blue(Room):
+    """Ce sont les pièces les plus communes, avec des effets variés
+
+    Attributes:
+    ---------------
+    - rooms : list[str] <<class attribute>>
+        Liste de toutes les pièces bleues
+    - cost : int
+        Coût de la pièce lors du tirage
+    - dig_spots_available : int
+        Nombre d'endroits où creuser pour la pièce choisie
+    - chest_spots_available : bool
+        Nombre de coffres pour la pièce choisie
+    - locker_spots_available : bool
+        Nombre de casiers pour la pièce choisie
+    - available_items : dict
+        Dictionnaire de tous les items se retrouvant dans la pièce
+    """
+    rooms = ["The Foundation", "Entrance Hall", "Spare Room", "Rotunda", "Parlor", "Billiard Room", "Gallery", "Room 8", "Closet", "Walk-in Closet", "Attic", "Storeroom", "Nook", "Garage", "Music Room", "Locker Room", "Den", "Wine Cellar", "Trophy Room", "Ballroom", "Pantry", "Rumpus Room", "Vault", "Office", "Drawing Room", "Study", "Library", "Chamber of Mirrors", "The Pool", "Drafting Studio", "Utility Closet", "Boiler Room", "Pump Room", "Security", "Workshop", "Laboratory", "Sauna", "Coat Check", "Mail Room", "Freezer", "Dining Room", "Observatory", "Conference Room", "Aquarium", "Antechamber", "Room 46"]
+
+    def __init__(self, name:str):
+        super().__init__(name, "blue")
+        self.cost = self.gem_cost()
+        self.dig_spots_available = self.dig_spots() 
+        self.chest_spots_available = self.chest_spots()
+        self.locker_spots_available = self.locker_spots()
+        self.available_items = self.items() 
+        
+    def items(self, inventory: Inventory):
+        """Indique les items de la pièce
+        
+        Parameters:
+        ---------------
+        - inventory : Inventory
+            L'inventaire du joueur
+        
+        """
+        room_items = {
+            "banane": 1, 
+            "orange": 1, 
+            "pomme" : 1, 
+            "gemme" : random.randint(1,3), 
+            "pièce": random.randint(1,3), 
+            "clé": random.randint(1,3), 
+            "dé": random.randint(1,3), 
+            "levier cassé":random.randint(1,3),
+            "pelle": 1,
+            "détecteur de métal": 1,
+            "marteau": 1, 
+            "patte de lapin": 1
+            }
+        
+        if inventory.shovel:
+            room_items["pelle"] = 0
+        if inventory.hammer:
+            room_items["marteau"] = 0
+        if inventory.lockpick_kit:
+            room_items["kit de crochetage"] = 0 
+        if inventory.rabbit_foot:
+            room_items["patte de lapin"] = 0
+        if inventory.metal_detector:
+            room_items["détecteur de métal"] = 0 
+
+        if self.name == "The Foundation":
+            return {}
+        elif self.name == "Entrance Hall":
+            return {}
+        elif self.name == "Spare Room":
+            return dict(random.sample(list(room_items.items()), 1)) 
+        elif self.name == "Rotunda":
+            return {} 
+        elif self.name == "Parlor":
+            room_items = {"pomme": 2}
+            return room_items
+        elif self.name == "Billiard Room":
+            room_items["pièce"] =random.choice([1, 5, 6, 10, 11])
+            return dict(random.sample(list(room_items.items()), random.randint(1, 2))) 
+        elif self.name == "Gallery":
+            return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
+        elif self.name == "Room 8":
+            return {}
+        elif self.name == "Closet":
+            return dict(random.sample(list(room_items.items()), 2)) 
+        elif self.name == "Walk-in Closet":
+            return dict(random.sample(list(room_items.items()), 4))
+        elif self.name == "Attic":
+            return dict(random.sample(list(room_items.items()), 8))
+        elif self.name == "Storeroom":
+            room_items = {"clé" : 1, "gemme" : 1, "pièce" : 1}
+            return room_items
+        elif self.name == "Nook":
+            room_items = {"clé" : 1}
+            return room_items
+        elif self.name == "Garage":
+            room_items = {"clé" : 3}
+            return room_items
+        elif self.name == "Music Room":
+            room_items = {"clé" : 1}
+            return room_items
+        elif self.name == "Locker Room":
+            room_items = {"clé" : 1}
+            return room_items
+        elif self.name == "Den":
+            room_items = {"gemme" : 1}
+            return room_items
+        elif self.name == "Wine Cellar":
+            room_items = {"gemme" : 3}
+            return room_items
+        elif self.name == "Trophy Room":
+            room_items = {"gemme" : 8}
+            return room_items
+        elif self.name == "Ballroom":
+            return {}
+        elif self.name == "Pantry":
+            room_items = {"pièce" : 4, "pomme" : 1, "banane" : 1}
+            return room_items
+        elif self.name == "Rumpus Room":
+            room_items = {"pièce" : 8}
+            return room_items
+        elif self.name == "Vault":
+            room_items = {"pièce" : 40}
+            return room_items
+        elif self.name == "Office":
+            room_items = {"pièce" : 2}
+            return room_items
+        elif self.name == "Drawing Room":
+            room_items = {}
+            return {}
+        elif self.name == "Study":
+            return {}
+        elif self.name == "Library":
+            return {}
+        elif self.name == "Chamber of Mirrors":
+            return {}
+        elif self.name == "The Pool":
+            return {}
+        elif self.name == "Drafting Studio":
+            return {}
+        elif self.name == "Utility Closet":
+            return {}
+        elif self.name == "Boiler Room":
+            return {}
+        elif self.name == "Pump Room":
+            return {}
+        elif self.name == "Security":
+            return {}
+        elif self.name == "Workshop":
+            return dict(random.sample(list(room_items.items()), 1))
+        elif self.name == "Security":
+            return {}
+        elif self.name == "Laboratory":
+            return {}
+        elif self.name == "Sauna":
+            return {}
+        elif self.name == "Coat Check":
+            return {}
+        elif self.name == "Mail Room":
+            return {}
+        elif self.name == "Freezer":
+            return {}
+        elif self.name == "Dining Room":
+            room_items = {"repas" : 1}
+            return room_items
+        elif self.name == "Observatory":
+            return {}
+        elif self.name == "Conference Room":
+            return {}
+        elif self.name == "Aquarium":
+            return {}
+        elif self.name == "Antechamber":
+            return {}
+        elif self.name == "Room 46":
+            return {}
+    
+    def gem_cost(self):
+        """Indique le coût pour entrer dans la pièce"""
+
+        cost = {
+            "The Foundation" : 0,
+            "Entrance Hall" : 0,
+            "Spare Room" : 0, 
+            "Rotunda" : 3, 
+            "Parlor" : 0, 
+            "Billiard Room" : 0, 
+            "Gallery" : 0, 
+            "Room 8" : 0, 
+            "Closet" : 0, 
+            "Walk-in Closet" : 1, 
+            "Attic" : 3, 
+            "Storeroom" : 0, 
+            "Nook" : 0, 
+            "Garage" : 1, 
+            "Music Room" : 2, 
+            "Locker Room" : 1, 
+            "Den" : 0, 
+            "Wine Cellar" : 0, 
+            "Trophy Room" : 5, 
+            "Ballroom" : 2, 
+            "Pantry" : 0, 
+            "Rumpus Room" : 1, 
+            "Vault" : 3, 
+            "Office" : 2, 
+            "Drawing Room" : 1, 
+            "Study" : 0, 
+            "Library" : 0, 
+            "Chamber of Mirrors" : 0, 
+            "The Pool" : 1, 
+            "Drafting Studio" : 2, 
+            "Utility Closet" : 0, 
+            "Boiler Room" : 1, 
+            "Pump Room" : 0, 
+            "Security" : 0, 
+            "Workshop" : 0, 
+            "Laboratory" : 0, 
+            "Sauna" : 0, 
+            "Coat Check" : 0, 
+            "Mail Room" : 0, 
+            "Freezer" : 0, 
+            "Dining Room" : 0, 
+            "Observatory" : 1, 
+            "Conference Room" : 0, 
+            "Aquarium" : 1, 
+            "Antechamber" : 0, 
+            "Room 46" : 0
+        }
+
+        return cost.get(self.name)
+
+    def dig_spots(self):
+        """Indique le nombre d'endroits où creuser dans la pièce"""
+
+        spots = {
+            "The Foundation" : random.randint(2, 5),
+            "Entrance Hall" : 0,
+            "Spare Room" : 0, 
+            "Rotunda" : 0, 
+            "Parlor" : 0, 
+            "Billiard Room" : 0, 
+            "Gallery" : 0, 
+            "Room 8" : 0, 
+            "Closet" : 0, 
+            "Walk-in Closet" : 0, 
+            "Attic" : 0, 
+            "Storeroom" : 0, 
+            "Nook" : 0, 
+            "Garage" : 0, 
+            "Music Room" : 0, 
+            "Locker Room" : 0, 
+            "Den" : 0, 
+            "Wine Cellar" : 1, 
+            "Trophy Room" : 0, 
+            "Ballroom" : 0, 
+            "Pantry" : 0, 
+            "Rumpus Room" : 0, 
+            "Vault" : 0, 
+            "Office" : 0, 
+            "Drawing Room" : 0, 
+            "Study" : 0, 
+            "Library" : 0, 
+            "Chamber of Mirrors" : 0, 
+            "The Pool" : 0, 
+            "Drafting Studio" : 0, 
+            "Utility Closet" : 0, 
+            "Boiler Room" : 0, 
+            "Pump Room" : 0, 
+            "Security" : 0, 
+            "Workshop" : 0, 
+            "Laboratory" : 0, 
+            "Sauna" : 0, 
+            "Coat Check" : 0, 
+            "Mail Room" : 0, 
+            "Freezer" : 0, 
+            "Dining Room" : 0, 
+            "Observatory" : 0, 
+            "Conference Room" : 0, 
+            "Aquarium" : 0, 
+            "Antechamber" : 0, 
+            "Room 46" : 0
+        }
+        return spots.get(self.name)
+
+    def chest_spots(self):
+        """Indique le nombre de coffres dans la pièce"""
+
+        spots = {
+            "The Foundation" : 0,
+            "Entrance Hall" : 0,
+            "Spare Room" : 0, 
+            "Rotunda" : 0, 
+            "Parlor" : 0, 
+            "Billiard Room" : 0, 
+            "Gallery" : 0, 
+            "Room 8" : 0, 
+            "Closet" : 0, 
+            "Walk-in Closet" : 0, 
+            "Attic" : 0, 
+            "Storeroom" : 0, 
+            "Nook" : 0, 
+            "Garage" : 0, 
+            "Music Room" : 0, 
+            "Locker Room" : 0, 
+            "Den" : 0, 
+            "Wine Cellar" : 0, 
+            "Trophy Room" : 0, 
+            "Ballroom" : 0, 
+            "Pantry" : 0, 
+            "Rumpus Room" : 0, 
+            "Vault" : 2, 
+            "Office" : 0, 
+            "Drawing Room" : 0, 
+            "Study" : 0, 
+            "Library" : 0, 
+            "Chamber of Mirrors" : 0, 
+            "The Pool" : 0, 
+            "Drafting Studio" : 0, 
+            "Utility Closet" : 0, 
+            "Boiler Room" : 0, 
+            "Pump Room" : 0, 
+            "Security" : 0, 
+            "Workshop" : 0, 
+            "Laboratory" : 0, 
+            "Sauna" : 0, 
+            "Coat Check" : 0, 
+            "Mail Room" : 0, 
+            "Freezer" : 0, 
+            "Dining Room" : 0, 
+            "Observatory" : 0, 
+            "Conference Room" : 0, 
+            "Aquarium" : 0, 
+            "Antechamber" : 0, 
+            "Room 46" : 0
+        }
+        return spots.get(self.name)
+    
+    def locker_spots(self):
+        """Indique le nombre de lockers dans la pièce"""
+
+        spots = {
+            "The Foundation" : 0,
+            "Entrance Hall" : 0,
+            "Spare Room" : 0, 
+            "Rotunda" : 0, 
+            "Parlor" : 0, 
+            "Billiard Room" : 0, 
+            "Gallery" : 0, 
+            "Room 8" : 0, 
+            "Closet" : 0, 
+            "Walk-in Closet" : 0, 
+            "Attic" : 0, 
+            "Storeroom" : 0, 
+            "Nook" : 0, 
+            "Garage" : 0, 
+            "Music Room" : 0, 
+            "Locker Room" : random.randint(3, 5), 
+            "Den" : 0, 
+            "Wine Cellar" : 0, 
+            "Trophy Room" : 0, 
+            "Ballroom" : 0, 
+            "Pantry" : 0, 
+            "Rumpus Room" : 0, 
+            "Vault" : 0, 
+            "Office" : 0, 
+            "Drawing Room" : 0, 
+            "Study" : 0, 
+            "Library" : 0, 
+            "Chamber of Mirrors" : 0, 
+            "The Pool" : 0, 
+            "Drafting Studio" : 0, 
+            "Utility Closet" : 0, 
+            "Boiler Room" : 0, 
+            "Pump Room" : 0, 
+            "Security" : 0, 
+            "Workshop" : 0, 
+            "Laboratory" : 0, 
+            "Sauna" : 0, 
+            "Coat Check" : 0, 
+            "Mail Room" : 0, 
+            "Freezer" : 0, 
+            "Dining Room" : 0, 
+            "Observatory" : 0, 
+            "Conference Room" : 0, 
+            "Aquarium" : 0, 
+            "Antechamber" : 0, 
+            "Room 46" : 0
+        }
+        return spots.get(self.name)
+    
+    def enter_room(self, inventory : Inventory) :
+        """Gère les intéractions dans la pièce
+
+        Parameters:
+        ---------------
+        - inventory : Inventory
+            L'inventaire du joueur
+        
+        """
+
+        message = [f"Vous êtes dans {self.name} !"]
+
+        if self.cost > 0 :
+
+            reponse = ''
+            while reponse != 'o' and reponse != 'n':
+                message.append(f"Coût d'entrée : {self.cost} gemme/s.")
+                message.append(f"Souhaitez-vous dépenser {self.cost} gemme/s ?")
+                reponse = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
+
+            reponse = pygame.event.get()
+            if reponse.key == pygame.K_o:
+                if inventory.gems < self.cost :
+                    message.append(f"Vous n'avez pas assez de gemmes. Vous êtes en manque de {self.cost - inventory.gems} gemme/s.")
+                    return False
+                message.append("Vous avez fait le bon choix !")
+            else:    
+                message.append("Vous ne souhaitez pas explorer la pièce.")
+                return False
+            
+            inventory.gems -= self.cost
+            if inventory.gems < 5 :
+                message.append("Économisez bien vos gemmes ! Vous n'en avez à peine :(")
+                
+        message = [f"Vous êtes dans {self.name} !"]
+        if self.name == "Ballroom":
+            if inventory.gems > 2 :
+                message.append(f"Vos gemmes ont disparu ! \n    - {inventory.gems + 2} gemmes")
+                inventory.gems = 2
+            else:
+                message.append(f"Vous avez maintenant 2 gemmes !")
+                inventory.gems = 2
+
+        if self.name == "Pump Room" :
+            response = ''
+            while reponse != 'o' and reponse != 'n':
+                message.append(f"Voulez-vous vider la piscine ?")
+                response = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
+            if reponse.key == pygame.K_o:
+                message.append("Vous avez trouvé 12 pièces.")
+            else:
+                message.append("Vous préférez laisser la psicine telle qu'elle est.")
+
+        if self.name == "Sauna" :
+            extra_steps = 15
+            message.append(f"Petit moment de détente ! \n    + {extra_steps} pas")
+            inventory.steps += extra_steps
+
+        if self.available_items and not self.visited :
+            for item_name, _ in self.available_items.items():
+                inventory.pick_up(Objet(item_name))
+        
+        if self.chest_spots_available>0:
+            for i in range(self.chest_spots_available):
+                inventory.pick_up("chest")
+        if self.locker_spots_available>0:
+            for i in range(self.locker_spots_available):
+                inventory.pick_up("locker") 
+
+        self.visited = True
+        return True
+
+class Purple(Room):
+    """Ce sont des chambres, qui ont souvent des effets permettant de regagner des pas
+    
+    Attributes:
+    ---------------
+    - rooms : list[str] <<class attribute>>
+        Liste de toutes les pièces violettes
+    - cost : int
+        Coût de la pièce lors du tirage
+    - dig_spots_available : int
+        Nombre d'endroits où creuser pour la pièce choisie
+    - chest_spots_available : bool
+        Nombre de coffres pour la pièce choisie
+    - locker_spots_available : bool
+        Nombre de casiers pour la pièce choisie
+    - available_items : dict
+        Dictionnaire de tous les items se retrouvant dans la pièce
+    """
+
+    rooms = ["Bedroom", "Boudoir", "Guest Bedroom", "Nursery", "Servant's Quarters", "Bunk Room", "Her Ladyship's Chamber", "Master Bedroom"] 
+    
+    def __init__(self, name:str):
+        super().__init__(name, "purple")
+        self.cost = self.gem_cost()
+        self.dig_spots_available = self.dig_spots()
+        self.chest_spots_available = self.dig_spots()
+        self.locker_spots_available = self.dig_spots()
+        self.available_items = self.items()
+        
+    def items(self, inventory: Inventory):
+        """Indique les items de la pièce
+        
+        Parameters:
+        ---------------
+        - inventory : Inventory
+            L'inventaire du joueur
+        
+        """
+        room_items = {
+            "banane": 1, 
+            "orange": 1, 
+            "pomme" : 1, 
+            "gemme" : random.randint(1,3), 
+            "pièce": random.randint(1,3), 
+            "clé": random.randint(1,3), 
+            "dé": random.randint(1,3), 
+            "levier cassé":random.randint(1,3),
+            "pelle": 1,
+            "détecteur de métal": 1,
+            "marteau": 1, 
+            "patte de lapin": 1
+            }
+        
+        if inventory.shovel:
+            room_items["pelle"] = 0
+        if inventory.hammer:
+            room_items["marteau"] = 0
+        if inventory.lockpick_kit:
+            room_items["kit de crochetage"] = 0 
+        if inventory.rabbit_foot:
+            room_items["patte de lapin"] = 0
+        if inventory.metal_detector:
+            room_items["détecteur de métal"] = 0 
+
+        if self.name == "Bedroom":
+            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
+        elif self.name == "Boudoir":
+            room_items["pièce"] = random.choice([2, 3, 5])
+            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
+        elif self.name == "Guest Bedroom":
+            return dict(random.sample(list(room_items.items()), 1)) 
+        elif self.name == "Nursery":
+            return dict(random.sample(list(room_items.items()), 2)) 
+        elif self.name == "Servant's Quarters":
+            return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
+        elif self.name == "Bunk Room":
+            return dict(random.sample(list(room_items.items()), random.randint(1, 2))) 
+        elif self.name == "Her Ladyship's Chamber":
+            return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
+        elif self.name == "Master Bedroom":
+            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
+
+    def gem_cost(self):
+        """Indique le coût pour entrer dans la pièce"""
+        
         cost = {
             "Bedroom": 0,
             "Boudoir": 0,
@@ -485,12 +1156,13 @@ class Purple(Room):
             "Servant's Quarters": 1,
             "Bunk Room": 0,
             "Her Ladyship's Chamber": 0,
-            "Her": 2
+            "Master Bedroom": 2
             }
+        
         return cost.get(self.name)
 
     def dig_spots(self):
-        """Génère un nombre d'endroits à creuser selon les pièces"""
+        """Indique le nombre d'endroits où creuser dans la pièce"""
 
         spots = {
             "Bedroom": 0,
@@ -500,12 +1172,13 @@ class Purple(Room):
             "Servant's Quarters": 0,
             "Bunk Room": 0,
             "Her Ladyship's Chamber": 0,
-            "Her": 0
+            "Master Bedroom": 0
             }
+        
         return spots.get(self.name)
 
     def chest_spots(self):
-        """Génère un nombre de coffres selon les pièces"""
+        """Indique le nombre de coffres dans la pièce"""
 
         spots = {
             "Bedroom": 0,
@@ -515,187 +1188,210 @@ class Purple(Room):
             "Servant's Quarters": 0,
             "Bunk Room": 0,
             "Her Ladyship's Chamber": 0,
-            "Her": 0
+            "Master Bedroom": 0
             }
+        
         return spots.get(self.name)
     
     def locker_spots(self):
-            """Génère un nombre de lockers selon les pièces"""
+        """Indique le nombre de lockers dans la pièce"""
 
-            spots = {
-                "Bedroom": 0,
-                "Boudoir": 0,
-                "Guest Bedroom": 0,
-                "Nursery": 0,
-                "Servant's Quarters": 0,
-                "Bunk Room": 0,
-                "Her Ladyship's Chamber": 0,
-                "Her": 0
-                }
-            return spots.get(self.name)
+        spots = {
+            "Bedroom": 0,
+            "Boudoir": 0,
+            "Guest Bedroom": 0,
+            "Nursery": 0,
+            "Servant's Quarters": 0,
+            "Bunk Room": 0,
+            "Her Ladyship's Chamber": 0,
+            "Master Bedroom": 0
+            }
+            
+        return spots.get(self.name)
     
     def enter_room(self, inventory : Inventory) :
-        """Interface pour rentrer dans les pièces vertes"""
+        """Gère les intéractions dans la pièce
+        
+        Parameters:
+        ---------------
+        - inventory : Inventory
+            L'inventaire du joueur
+        
+        """
 
-        print(f"Vous êtes dans {self.name} !")
+        message = [f"Vous êtes dans {self.name} !"]
 
         if self.cost>0 :
-            print(f"Coût d'entrée : {self.cost} gemme/s.")
-            print(f"Souhaitez-vous dépenser {self.cost} gemme/s ?")
-            response = ''
-            while response not in ['o', 'n']:
-                response = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
-            
-            if response == 'n':
-                print("Vous ne souhaitez pas explorer la pièce.")
+            reponse = ''
+            while reponse != 'o' and reponse != 'n':
+                message.append(f"Coût d'entrée : {self.cost} gemme/s.")
+                message.append(f"Souhaitez-vous dépenser {self.cost} gemme/s ?")
+                reponse = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
+
+            reponse = pygame.event.get()
+            if reponse.key == pygame.K_o:
+                if inventory.gems < self.cost :
+                    message.append(f"Vous n'avez pas assez de gemmes. Vous êtes en manque de {self.cost - inventory.gems} gemme/s.")
+                    return False
+                message.append("Vous avez fait le bon choix !")
+            else:    
+                message.append("Vous ne souhaitez pas explorer la pièce.")
                 return False
 
             if inventory.gems < self.cost :
-                print(f"Vous n'avez pas assez de gemmes. Vous êtes en manque de {self.cost - inventory.gems} gemme/s.")
+                message.append(f"Vous n'avez pas assez de gemmes. Vous êtes en manque de {self.cost - inventory.gems} gemme/s.")
                 return False
             
             inventory.gems -= self.cost
-            print(f"Gemmes restantes : {inventory.gems}")
             if inventory.gems < 5 :
-                print("Économisez bien vos gemmes ! Vous n'en avez à peine :(")
+                message.append("Économisez bien vos gemmes ! Vous n'en avez à peine :(")
         
+        message = [f"Vous êtes dans {self.name} !"]
+
         if self.name == "Bedroom":
             extra_steps = 2
-
-            print(f"Vois avez très bien dormi ! \n     + {extra_steps} pas")
+            message.append(f"Vois avez très bien dormi ! \n     + {extra_steps} pas")
             inventory.steps += 2
-            print(f"Pas : {inventory.steps}")
 
         if self.name == "Boudoir" :
             extra_steps = random.randint(0, 4)
-            print(f"Vois avez très bien dormi ! \n     + {extra_steps} pas")
+            message.append(f"Vois avez très bien dormi ! \n     + {extra_steps} pas")
             inventory.steps += extra_steps
-            print(f"Pas : {inventory.steps}")
 
         if self.name == "Guest Bedroom" and not self.visited:
             extra_steps = 10
-            print(f"Vois avez très bien dormi ! \n     + {extra_steps} pas")
+            message.append(f"Vois avez très bien dormi ! \n     + {extra_steps} pas")
             inventory.steps += extra_steps
-            print(f"Pas : {inventory.steps}")
+
         if self.name == "Servant's Quarters" and not self.visited:
-            print(f"Vous voyez 3 clés sur le lit.\n    + 3 clés")
+            message.append(f"Vous voyez 3 clés sur le lit.\n    + 3 clés")
             inventory.keys +=3
-            print(f"Clés disponible dans l'inventaire : {inventory.keys}")
-        # De façon aléatoire, certaines pièces contiennent des items dans les armoires, coffres etc. Pour l'instant, le joeur les obtient immédiatement
+
+        message = [f"Vous êtes dans {self.name} !"]
+
         if self.available_items and not self.visited :
             if self.name == "Bedroom" :
-                print(random.choice(["Vous trouvez dans l'armoire :", "Vous trouvez sur la statue :"]))
+                message.append(random.choice(["Vous trouvez dans l'armoire :", "Vous trouvez sur la statue :"]))
             if self.name == "Boudoir" or self.name == "Guest Bedroom" or self.name == "Nursery" or self.name == "Master Bedroom":
-                print("Vous trouvez sur la table :")
+                message.append("Vous trouvez sur la table :")
             if self.name == "Servant's Quarters" :
-                print(random.choice(["Vous trouvez sur le lit :", "Vous trouvez sur la planche à repasser :"]))
+                message.append(random.choice(["Vous trouvez sur le lit :", "Vous trouvez sur la planche à repasser :"]))
             if self.name == "Her Ladyship's Chamber" :
-                print(random.choice(["Vous trouvez sur la table :", "Vous trouvez sur la chaisse :"]))
+                message.append(random.choice(["Vous trouvez sur la table :", "Vous trouvez sur la chaisse :"]))
             
             for item_name, _ in self.available_items.items():
-                print(f"==> {item_name}")
                 inventory.pick_up(Objet(item_name))
-        
+
+        if self.chest_spots_available>0:
+            for i in range(self.chest_spots_available):
+                inventory.pick_up("chest")
+        if self.locker_spots_available>0:
+            for i in range(self.locker_spots_available):
+                inventory.pick_up("locker") 
+                
         self.visited = True
         return True
 
 class Red(Room):
+    """Ce sont des pièces qui ont souvent des caractéristiques ou des effets les rendant indésirables (peu de portes, retirent des pas, etc.)
+    
+    Attributes:
+    ---------------
+    - rooms : list[str] <<class attribute>>
+        Liste de toutes les pièces rouges
+    - cost : int
+        Coût de la pièce lors du tirage
+    - dig_spots_available : int
+        Nombre d'endroits où creuser pour la pièce choisie
+    - chest_spots_available : bool
+        Nombre de coffres pour la pièce choisie
+    - locker_spots_available : bool
+        Nombre de casiers pour la pièce choisie
+    - available_items : dict
+        Dictionnaire de tous les items se retrouvant dans la pièce
+    """
 
     rooms = ["Lavatory", "Chapel", "Maid's Chamber", "Archives", "Gymnasium", "Darkroom", "Weight Room", "Furnace"] 
     
     def __init__(self, name:str):
         super().__init__(name, "red")
-        self.dig_spots_available = self.dig_spots() # Nombre d'endroits à creuser
-        self.dig_spots_position = self.dig_position() # Position des endroits à creuser s'il y en a
-        self.permanent_objects = None # objets permanents (ex: pelle)
-        self.available_items = self.items() # items que le joueur découvre en ouvrant des coffres, armoires etc. Ici, le joueur les obtient immédiatemment
-      
-    def enter_room(self, inventory : Inventory) :
-        """Interface pour entrer dans les pièces vertes"""
+        self.cost = self.gem_cost()
+        self.dig_spots_available = self.dig_spots()
+        self.chest_spots_available = self.chest_spots()
+        self.locker_spots_available = self.locker_spots()
+        self.available_items = self.items() 
 
-        print(f"Vous êtes dans {self.name} !")
-
-        if self.name == "Weight Room":
-            print(f"Après un long entraînement, vous êtes épuisé ! Vous perdez {inventory.steps//2} pas. Reposez-vous, avant de continuer.")
-            inventory.steps = inventory.steps//2
-            print(f"Pas restants : {inventory.steps}")
-
-        if self.name == "Gymnasium" :
-            print(f"Après un long entraînement, vous êtes épuisé ! Vous perdez {inventory.steps - 2} pas. Reposez-vous, avant de continuer.")
-            inventory.steps = inventory.steps - 2
-            print(f"Pas restants : {inventory.steps}")
-
-        if self.name == "Chapel" :
-            print(f"Vous faites une donation de 1 pièce. L'église vous remercie !")
-            if inventory.coins >= 1:
-                inventory.coins -= 1
-                print(f"Pièces restantes : {inventory.coins}")
-            else :
-                print("Vous n'avez pas assez de pièces pour faire une donation.")
-
-        # De façon aléatoire, certaines pièces contiennent des items dans les armoires, coffres etc. Pour l'instant, le joeur les obtient immédiatement
-        if self.available_items and not self.visited :
-            if self.name == "Chapel" :
-                print("Vous trouvez sur les chandeliers :")
-            if self.name == "Archives" :
-                print("Vous fouillez les archives et trouvez :")
-            if self.name == "Gymnasium" :
-                print("Vous trouvez sur le banc :")
-            if self.name == "Darkroom" :
-                print("Vous ne voyez rien, vous ne pouvez pas explorer la pièce dans l'obscurité.")
-                print("Voulez vous allumer la lumière ?")
-                response = ''
-                while response not in ['o', 'n']:
-                    response = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
-                
-                if response == 'o':
-                    print("La lumière est allumée ! Vous trouvez :")
-                else:
-                    return False
-            if self.name == "Weight Room" :
-                print("Vous trouvez à côté des poids :")
-            if self.name == "Furnace" :
-                print("La chaleur est intense, vous voulez partir. Mais, au moins vous avez trouvé quelques items :")
-            for item_name, _ in self.available_items.items():
-                print(f"==> {item_name}")
-                inventory.pick_up(Objet(item_name))
+    def items(self, inventory : Inventory):
+        """Indique les items de la pièce
         
-        print("\nGrille de la pièce :") # Grille à modifier
-        self._display_text_grid()
+        Parameters:
+        ---------------
+        - inventory : Inventory
+            L'inventaire du joueur
         
-        self.visited = True
-        return True
-    
-    def items(self):
-        """Génère les items des pièces"""
+        """
+        room_items = {
+            "banane": 1, 
+            "orange": 1, 
+            "pomme" : 1, 
+            "gemme" : random.randint(1,3), 
+            "pièce": random.randint(1,3), 
+            "clé": random.randint(1,3), 
+            "dé": random.randint(1,3), 
+            "levier cassé":random.randint(1,3),
+            "pelle": 1,
+            "détecteur de métal": 1,
+            "marteau": 1, 
+            "patte de lapin": 1
+            }
+        
+        if inventory.shovel:
+            room_items["pelle"] = 0
+        if inventory.hammer:
+            room_items["marteau"] = 0
+        if inventory.lockpick_kit:
+            room_items["kit de crochetage"] = 0 
+        if inventory.rabbit_foot:
+            room_items["patte de lapin"] = 0
+        if inventory.metal_detector:
+            room_items["détecteur de métal"] = 0 
+
         if self.name == "Lavatory":
-            room_items = {}
-            return room_items
+            return {}
         elif self.name == "Chapel":
-            gold = [2, 3, 4, 5, 12, 14]
-            room_items = {"pièce": random.choice(gold), "gemme": random.randint(1,2)}
+            room_items["pièce"] = random.choice([2, 3, 4, 5, 12, 14])
             return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
         elif self.name == "Maid's Chamber":
-            room_items = {}
-            return room_items
+            return {}
         elif self.name == "Archives":
-            room_items = {"gemme":random.randint(1,2), "pomme" : 1, "clé" : random.randint(1, 2), "levier cassé" : 1, "détecteur de métal" : 1}
-            return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
+            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
         elif self.name == "Gymnasium":
-            room_items = {"clé": 1, "pièce":3}
-            return room_items
+            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
         elif self.name == "Darkroom":
-            room_items = {"gemme": random.randint(1, 2), "clé": 1, "levier cassé": 1}
             return dict(random.sample(list(room_items.items()), 1)) 
         elif self.name == "Weight Room":
-            room_items = {"pièce": 3, "levier cassé": 1}
-            return room_items
+            return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
         elif self.name == "Furnace":
-            room_items = {}
-            return room_items 
-    
+            return {} 
+
+    def gem_cost(self):
+        """Indique le coût pour entrer dans la pièce"""
+        
+        spots = {
+            "Lavatory" : 0, 
+            "Chapel" : 0, 
+            "Maid's Chamber" : 0, 
+            "Archives" : 0, 
+            "Gymnasium" : 0, 
+            "Darkroom" : 0, 
+            "Weight Room" : 0, 
+            "Furnace" : 0
+            }
+        
+        return spots.get(self.name)
+        
     def dig_spots(self):
-        """Génère un nombre d'endroits à creuser selon les pièces"""
+        """Indique le nombre d'endroits où creuser dans la pièce"""
 
         spots = {
             "Lavatory" : 0, 
@@ -707,51 +1403,199 @@ class Red(Room):
             "Weight Room" : 0, 
             "Furnace" : random.randint(0, 2)
             }
+        
         return spots.get(self.name)    
 
+    def chest_spots(self):
+        """Indique le nombre de coffres dans la pièce"""
+
+        spots = {
+            "Lavatory" : 0, 
+            "Chapel" : 0, 
+            "Maid's Chamber" : 0, 
+            "Archives" : 0, 
+            "Gymnasium" : 0, 
+            "Darkroom" : 0, 
+            "Weight Room" : 0, 
+            "Furnace" : 0
+            }
+        
+        return spots.get(self.name) 
+    
+    def locker_spots(self):
+        """Indique le nombre de casiers dans la pièce"""
+
+        spots = {
+            "Lavatory" : 0, 
+            "Chapel" : 0, 
+            "Maid's Chamber" : 0, 
+            "Archives" : 0, 
+            "Gymnasium" : 0, 
+            "Darkroom" : 0, 
+            "Weight Room" : 0, 
+            "Furnace" : 0
+            }
+        
+        return spots.get(self.name) 
+       
+    def enter_room(self, inventory : Inventory) :
+        """Gère les intéractions dans la pièce
+        
+        Parameters:
+        ---------------
+        - inventory : Inventory
+            L'inventaire du joueur
+        
+        """
+
+        message = [f"Vous êtes dans {self.name} !"]
+
+        if self.name == "Weight Room":
+            message.append(f"Soulever des poids vous fatigue beaucoup ! Vous perdez {inventory.steps//2} pas. Reposez-vous, avant de continuer.")
+            inventory.steps = inventory.steps//2
+            message.append(f"Pas restants : {inventory.steps}")
+        
+        if self.name == "Maid's Chamber":
+            message.append(f"En faisant le ménage vous avez perdu : \n    - 2 pas\n    - 1 clé\n    - 1 gemme\n    - 1 pièce")
+            inventory.steps -= 2
+            inventory.coins -= 1
+            inventory.gems -= 1
+
+        if self.name == "Gymnasium" :
+            message.append(f"Après un long entraînement, vous êtes épuisés ! Vous perdez {inventory.steps - 2} pas. Reposez-vous, avant de continuer.")
+            inventory.steps -= 2
+
+        if self.name == "Chapel" :
+            message.append(f"Vous faites une donation de 1 pièce. L'église vous remercie !")
+            if inventory.coins >= 1:
+                inventory.coins -= 1
+            else :
+                message.append("Vous n'avez pas assez de pièces pour faire une donation :(")
+
+        if self.available_items and not self.visited :
+            if self.name == "Chapel" :
+                message.append("Vous trouvez sur les chandeliers :")
+            if self.name == "Archives" :
+                message.append("Vous fouillez les archives et trouvez :")
+            if self.name == "Gymnasium" :
+                message.append("Vous trouvez sur le banc :")
+            if self.name == "Darkroom" :
+                message.append("Vous ne voyez rien, vous ne pouvez pas explorer la pièce dans l'obscurité.")
+                message.append("Voulez vous allumer la lumière ?")
+                reponse = ''
+                while reponse != 'o' and reponse != 'n':
+                    reponse = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
+                
+                reponse = pygame.event.get()
+                if reponse.key == pygame.K_o:
+                    message.append("La lumière est allumée ! Vous trouvez :")
+                else:
+                    message.append("Vous ne voyez rien, donc vous ne pouvez pas explorer la pièce.")
+                    return False
+            if self.name == "Weight Room" :
+                message.append("Vous trouvez à côté des poids :")
+            if self.name == "Furnace" :
+                message.append("La chaleur est intense, vous voulez partir. Mais, au moins vous avez trouvé quelques items :")
+            for item_name, _ in self.available_items.items():
+                inventory.pick_up(Objet(item_name))
+        
+        if self.chest_spots_available>0:
+            for i in range(self.chest_spots_available):
+                inventory.pick_up("chest")
+        if self.locker_spots_available>0:
+            for i in range(self.locker_spots_available):
+                inventory.pick_up("locker")   
+                     
+        self.visited = True
+        return True
+    
 class Green(Room):
-    """Ce sont des jardins d'intérieur, qui contiennent souvent des gemmes, des endroits où creuser, et des objets permanents"""
+    """Ce sont des jardins d'intérieur, qui contiennent souvent des gemmes, des endroits où creuser, et des objets permanents
+
+    Attributes:
+    ---------------
+    - rooms : list[str] <<class attribute>>
+        Liste de toutes les pièces vertes
+    - cost : int
+        Coût de la pièce lors du tirage
+    - dig_spots_available : int
+        Nombre d'endroits où creuser pour la pièce choisie
+    - chest_spots_available : bool
+        Nombre de coffres pour la pièce choisie
+    - locker_spots_available : bool
+        Nombre de casiers pour la pièce choisie
+    - available_items : dict
+        Dictionnaire de tous les items se retrouvant dans la pièce
+    - bonus : int
+        Nombre de gemmes bonus de la pièce 
+    
+    """
     
     rooms = ["Terrace", "Patio", "Courtyard", "Cloister", "Veranda", "Greenhouse", "Morning Room", "Secret Garden"]
 
     def __init__(self, name:str):
-        super().__init__(name, "vert")
-        self.cost = self.gem_cost() # Coût de la pièce
-        self.dig_spots_available = self.dig_spots() # Nombre d'endroits à creuser
-        self.dig_spots_position = self.dig_position() # Position des endroits à creuser s'il y en a
-        self.gem_bonus = self.gem_bonus() # Bonus des pièces lorsque le joueur rentre dedans
-        self.permanent_objects = None # objets permanents (ex: pelle)
-        self.available_items = self.items() # items que le joueur découvre en ouvrant des coffres, armoires etc. Ici, le joueur les obtient immédiatemment
-   
-    def items(self):
-        """Génère les items des pièces"""
+        super().__init__(name, "green")
+        self.cost = self.gem_cost() 
+        self.dig_spots_available = self.dig_spots() 
+        self.chest_spots_available = self.chest_spots()
+        self.locker_spots_available = self.locker_spots()
+        self.available_items = self.items() 
+        self.bonus = self.gem_bonus() 
+        
+    def items(self, inventory : Inventory):
+        """Indique les items de la pièce
+        
+        Parameters:
+        ---------------
+        - inventory : Inventory
+            L'inventaire du joueur
+        
+        """
+        room_items = {
+            "banane": 1, 
+            "orange": 1, 
+            "pomme" : 1, 
+            "gemme" : random.randint(1,3), 
+            "pièce": random.randint(1,3), 
+            "clé": random.randint(1,3), 
+            "dé": random.randint(1,3), 
+            "levier cassé":random.randint(1,3),
+            "pelle": 1,
+            "détecteur de métal": 1,
+            "marteau": 1, 
+            "patte de lapin": 1
+            }
+        
+        if inventory.shovel:
+            room_items["pelle"] = 0
+        if inventory.hammer:
+            room_items["marteau"] = 0
+        if inventory.lockpick_kit:
+            room_items["kit de crochetage"] = 0 
+        if inventory.rabbit_foot:
+            room_items["patte de lapin"] = 0
+        if inventory.metal_detector:
+            room_items["détecteur de métal"] = 0   
+            
         if self.name == "Terrace":
-            room_items = {"banane": 1, "orange": 1, "gemme":random.randint(1,2), "pièce": 2, "compas":1, "pelle": 1}
             return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
         elif self.name == "Patio":
-            room_items = {"pomme": 1, "clé": 1, "gemme":random.randint(1,3), "détecteur de métal": 1, "pelle": 1}
             return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
         elif self.name == "Courtyard":
-            room_items = {"détecteur de métal": 1, "marteau": 1, "pelle": 1}
             return dict(random.sample(list(room_items.items()), 1)) 
         elif self.name == "Cloister":
-            room_items = {"gemme":random.randint(1,3)}
             return room_items
         elif self.name == "Veranda":
-            room_items = {"détecteur de métal": 1, "marteau": 1, "pelle": 1, "gemme":1}
             return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
         elif self.name == "Greenhouse":
-            room_items = {"détecteur de métal": 1, "marteau": 1, "pelle": 1}
             return dict(random.sample(list(room_items.items()), 1)) 
         elif self.name == "Morning Room":
-            room_items = {"dé": 2, "patte de lapin": 1, "pelle": 1, "salière": 1, "coin purse":1}
             return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
         elif self.name == "Secret Garden":
-            room_items = {"détecteur de métal": 1, "pelle": 1, "marteau": 1, "levier cassé":1}
             return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
     
     def dig_spots(self):
-        """Génère un nombre d'endroits à creuser selon les pièces"""
+        """Indique le nombre d'endroits où creuser dans la pièce"""
 
         spots = {
             "Terrace": random.randint(1, 3),
@@ -763,10 +1607,44 @@ class Green(Room):
             "Morning Room": random.randint(0, 3),
             "Secret Garden":random.randint(3, 7)
             }
+        
+        return spots.get(self.name)
+    
+    def chest_spots(self):
+        """Indique le nombre de coffres dans la pièce"""
+
+        spots = {
+            "Terrace": 0,
+            "Patio": 0,
+            "Courtyard": 0,
+            "Cloister": 0,
+            "Veranda": 0,
+            "Greenhouse": 0,
+            "Morning Room": 0,
+            "Secret Garden": 0
+            }
+        
+        return spots.get(self.name)
+    
+    def locker_spots(self):
+        """Indique le nombre de casiers dans la pièce"""
+
+        spots = {
+            "Terrace": 0,
+            "Patio": 0,
+            "Courtyard": 0,
+            "Cloister": 0,
+            "Veranda": 0,
+            "Greenhouse": 0,
+            "Morning Room": 0,
+            "Secret Garden": 0
+            }
+        
         return spots.get(self.name)
 
     def gem_cost(self):
-        """Génère le coût pour entrer dans chaque pièce"""
+        """Indique le coût pour entrer dans la pièce"""
+        
         cost = {
             "Terrace": 0,
             "Patio": 1,
@@ -777,10 +1655,12 @@ class Green(Room):
             "Morning Room": 0,
             "Secret Garden": 0
             }
+        
         return cost.get(self.name)
 
     def gem_bonus(self):
-        """Indique si les pièces apportent un bonus (gemmes) ou pas"""
+        """Indique si la pièce apporte des gemmes bonus ou pas, et la quantité"""
+
         rooms = {
             "Terrace": (True, random.randint(1, 2)),
             "Patio": (True, random.randint(1, 3)),
@@ -791,45 +1671,62 @@ class Green(Room):
             "Morning Room": (True, 2),
             "Secret Garden": (False, 0)
             }
+        
         return rooms.get(self.name)
 
     def enter_room(self, inventory : Inventory) :
-        """Interface pour rentrer dans les pièces vertes"""
+        """Gère les intéractions dans la pièce
+        
+        Parameters:
+        ---------------
+        - inventory : Inventory
+            L'inventaire du joueur
+        
+        """
 
-        print(f"Vous êtes dans {self.name} !")
+        message = [f"Vous êtes dans la pièce {self.name}."]
 
-        if self.cost>0 :
-            print(f"Coût d'entrée : {self.cost} gemme/s.")
-            print(f"Souhaitez-vous dépenser {self.cost} gemme/s ?")
-            response = ''
-            while response not in ['o', 'n']:
-                response = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
+        if self.cost > 0 :
             
-            if response == 'n':
-                print("Vous ne souhaitez pas explorer la pièce.")
-                return False
+            reponse = ''
+            while reponse != 'o' and reponse != 'n':
+                message.append(f"Coût d'entrée : {self.cost} gemme/s.")
+                message.append(f"Souhaitez-vous dépenser {self.cost} gemme/s ?")
+                reponse = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
 
-            if inventory.gems < self.cost :
-                print(f"Vous n'avez pas assez de gemmes. Vous êtes en manque de {self.cost - inventory.gems} gemme/s.")
+            reponse = pygame.event.get()
+            if reponse.key == pygame.K_o:
+                if inventory.gems < self.cost :
+                    message.append(f"Vous n'avez pas assez de gemmes. Vous êtes en manque de {self.cost - inventory.gems} gemme/s.")
+                    return False
+                message.append("Vous avez fait le bon choix !")
+            else:    
+                message.append("Vous ne souhaitez pas explorer la pièce.")
                 return False
+            
             
             inventory.gems -= self.cost
-            print(f"Gemmes restantes : {inventory.gems}")
             if inventory.gems < 5 :
-                print("Économisez bien vos gemmes ! Vous n'en avez à peine :(")
+                message.append("Économisez bien vos gemmes ! Vous n'en avez à peine :(")
         
-        # Certaines pièces apportent des gemmes juste en les débloquants, puis après quelques jours
-        has_bonus, bonus_amount = self.gem_bonus
+        message = [f"Vous êtes dans la pièce {self.name}."]
+
+        has_bonus, bonus_amount = self.bonus
         if has_bonus and bonus_amount > 0:
-            print(f"Bonus ! \n+ {bonus_amount} gemme(s)")
+            message.append(f"Bonus ! \n    + {bonus_amount} gemme(s)")
             inventory.gems += bonus_amount
-        
-        # De façon aléatoire, certaines pièces contiennent des items dans les armoires, coffres etc. Pour l'instant, le joeur les obtient immédiatement
+
         if self.available_items and not self.visited:
-            print("Objets découverts dans le jardin :")
+            message.append("Objets découverts :")
             for item_name, _ in self.available_items.items():
-                print(f"==> {item_name}")
                 inventory.pick_up(Objet(item_name))
-        
+                
+        if self.chest_spots_available>0:
+            for i in range(self.chest_spots_available):
+                inventory.pick_up("chest")
+        if self.locker_spots_available>0:
+            for i in range(self.locker_spots_available):
+                inventory.pick_up("locker") 
+                
         self.visited = True
         return True

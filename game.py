@@ -5,7 +5,7 @@ from player import Player
 from map import Map
 from room_draw import RoomDraw
 from colorpalette import couleurs
-from chambres import Yellow, Green
+from Chambres import Yellow, Green, Red, Blue, Purple
 
 pygame.init()
 taille = (1280,720)
@@ -34,7 +34,12 @@ noir.set_alpha(10)
 tutorial_size = [screen.get_width() * 0.9, screen.get_height() * 0.9]
 
 def tutorial_screen(clavier):
-    # Ecran de tutoriel
+    """Gère l'écran de tutoriel.
+    
+    Parameters:
+        - clavier
+            Récupère le clavier choisi
+    """
     global tutorial_size
     tutorial = pygame.Surface((tutorial_size[0],tutorial_size[1]))
     
@@ -98,7 +103,8 @@ message_timer = 0
 current_message = ""
 
 def init_game():
-    """Initialise une nouvelle partie"""
+    """Initialise une nouvelle partie."""
+    
     global game_map, player, room_draw_system, current_room_node, message_timer, current_message
     
     message_timer = 0
@@ -126,13 +132,27 @@ def init_game():
     print(f"Salle actuelle: {current_room_node.room.name}")
 
 def show_message(message, duration=2000):
-    """Affiche un message temporaire"""
+    """Affiche un message temporaire.
+    
+    Parameters:
+        - message : str
+            Message qui s'affiche sur l'interface du jeu
+        - duration : int
+            Durée du message affiché
+    """
+
     global current_message, message_timer
     current_message = message
     message_timer = duration
 
 def get_camera_offset():
-    """Calcule l'offset de la caméra pour centrer sur le joueur"""
+    """Calcule l'offset de la caméra pour centrer sur le joueur.
+    
+    Returns:
+    - tuple(int, int)
+        Renvoie la valeur offset en x et en y de la caméra
+    """
+
     if player is None:
         return (0, 0)
     
@@ -155,8 +175,16 @@ def get_camera_offset():
     return (offset_x, offset_y)
 
 def draw_fog_of_war(surface, camera_offset):
-    """Dessine le brouillard de guerre sur les salles non visitées"""
-    fog_color = couleurs["darkblue"]  #
+    """Dessine le brouillard de guerre sur les salles non visitées.
+    
+    Parameters:
+        - surface : Surface
+            Surface du brouillard
+        - camera_offset : tuple(int, int)
+            Offset de la caméra
+    """
+
+    fog_color = couleurs["darkblue"]  
     
     for (x, y), room_node in game_map.room_nodes.items():
         if not room_node.room.visited:
@@ -176,7 +204,8 @@ def draw_fog_of_war(surface, camera_offset):
                            pygame.Rect(draw_x, draw_y, game_map.tile_size, game_map.tile_size), 1)
 
 def draw_ui():
-    """Dessine l'interface utilisateur (barre de stats)"""
+    """Dessine l'interface utilisateur (barre de stats)."""
+
     # Inventaire
     screen.blit(player.inventory.show_inventory(screen), (640, 0))
     
@@ -222,7 +251,8 @@ def draw_ui():
         screen.blit(message_surface, (centerx - 300, (3/4)*screen.get_height() - 40 ))
 
 def enter_current_room():
-    """Gère l'entrée dans la salle actuelle"""
+    """Gère l'entrée dans la salle actuelle."""
+
     global show_room_interface, current_room_node
     
     room = current_room_node.room
@@ -230,42 +260,50 @@ def enter_current_room():
     if not room.visited:
         room.visited = True
     
-    # if première fois qu'on entre, faire les actions spéciales
-    if isinstance(room, Yellow):
-        # 
+    if isinstance(room, Yellow): 
         result = room.enter_room(player.inventory)
         if result:
             show_message(f"Transaction effectuée dans {room.name}")
     elif isinstance(room, Green):
-        # Jardin - interface console
         result = room.enter_room(player.inventory)
         if result:
             show_message(f"Vous avez exploré {room.name}")
-    else:
-        # Salle générique
-        show_message(f"Vous explorez {room.name}")
-        
-        # ajout de quelques objets aléatoirement dans les salles génériques
-        import random
-        if random.random() < 0.3:  # 30% de chance
-            items = ["pièce", "gemme", "clé"]
-            item = random.choice(items)
-            quantity = random.randint(1, 3) if item == "pièce" else 1
-            
-            for _ in range(quantity):
-                player.inventory.pick_up(Objet(item), screen)
-            
-            show_message(f"Trouvé: {quantity} {item}(s) !")
-
+    elif isinstance(room, Blue):
+        result = room.enter_room(player.inventory)
+        if result:
+            show_message(f"Vous avez exploré {room.name}")
+    elif isinstance(room, Red):
+        result = room.enter_room(player.inventory)
+        if result:
+            show_message(f"Vous avez exploré {room.name}")
+    elif isinstance(room, Purple):
+        result = room.enter_room(player.inventory)
+        if result:
+            show_message(f"Vous avez exploré {room.name}")
+    
 def check_win_condition():
-    """Vérifie si le joueur a gagné (atteint l'antichambre)"""
+    """Vérifie si le joueur a gagné (atteint l'antichambre).
+    
+    Returns:
+    - bool
+        Renvoie True si l'antichambre est retrouvée, False sinon
+    """
+
     room = current_room_node.room
     if "antichambre" in room.name.lower() or "antechamber" in room.name.lower():
         return True
     return False
 
 def handle_movement(dx, dy):
-    """Gère les tentatives de déplacement du joueur"""
+    """Gère les tentatives de déplacement du joueur.
+
+    Parameters:
+        - dx : int
+            Mouvement en x du joueur
+        - dy : int
+            Mouvement en y du joueur
+    """
+
     global current_room_node
     
     if player.is_moving:

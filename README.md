@@ -32,6 +32,6 @@ python game.py
 
 ## Contributeurs et contributrices
 
-- Uxue
+- Uxue AIZPURUA UBEDA
 - Franek
 - Lúcia RADANOVIC GOMES

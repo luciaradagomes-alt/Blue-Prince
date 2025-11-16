@@ -1,7 +1,7 @@
 import random
 
 class Objet:
-    """ Classe qui définit la nature des objets contenus dans le jeu
+    """ Classe qui définit la nature des objets contenus dans le jeu.
 
     Attributes:
     - possible : list[str] <<class attribute>>
@@ -27,6 +27,7 @@ class Objet:
                 "loupe", "salière", "compas", "masque pour dormir"]
 
     def __init__(self, name):
+
         self.name = name
         self.food = False
         self.locker = False
@@ -54,22 +55,30 @@ class Objet:
         self.__name = name
 
     def is_stackable(self):
+        """Indique si l'objet est stackable ou pas."""
+
         stackable_objects = ["pièce", "gemme", "clé", "dé"]
+
         if self.name in stackable_objects:
             self.stackable = True
 
     def is_food(self):
+        """Indique si l'objet est de la nourriture ou pas."""
+
         food = {"pomme" : 2, "banane" : 3, "salade" : 5, "soupe" : 5, "gâteau" : 10, "sandwich" : 15, "bacon et oeufs" : 15, "repas" : 25}
+
         if self.name in food:
             self.food = True
             self.steps = food[self.name]
 
     def is_locker(self):
+        """Indique si l'objet est un casier ou pas et les items qu'il génère."""
+
         proba = random.randint(1, 100)
 
         if self.name == "casier":
             self.locker = True
-            self.required_tool = "clé"   # L'outil nécessaire pour ouvrir le locker
+            self.required_tool = "clé" 
             if proba <= 50:             
                 self.objects = {}
 
@@ -98,6 +107,8 @@ class Objet:
                         self.objects["pièce"] += random.randint(1, 5)   
             
     def is_chest(self):
+        """Indique si l'objet est un coffre ou pas et les items qu'il génère."""
+
         proba = random.randint(1, 100)
 
         if self.name == "coffre":
@@ -129,9 +140,10 @@ class Objet:
                         self.objects["gemme"] += 1
                     else:
                         self.objects["pièce"] += random.randint(1, 5)   
-                
-            
+                      
     def is_dig_spot(self):
+        """Indique si l'objet est un endroit où creuser ou pas et les items qu'il génère."""
+        
         proba = random.randint(1, 100)
 
         if self.name == "dig_spot":

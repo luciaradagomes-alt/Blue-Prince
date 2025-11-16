@@ -110,7 +110,13 @@ class RoomDraw:
         self.available_rooms = [r for r in self.available_rooms 
                                if not r.get("temporary", False)]
         
-        return drawn
+        rooms = []
+        for room in self.current_draw:
+            room_name = room['room']
+            color = room['color']
+            rooms.append(create_room(room_name,color))
+
+        return rooms
     
     def redraw(self, inventory):
         """Retire à nouveau les salles (coûte 1 dé)
@@ -122,7 +128,6 @@ class RoomDraw:
             return False
         
         inventory.dice -= 1
-        self.draw_rooms()
         return True
     
     def choose_room(self, choice_index, inventory, gem_cost=0):
@@ -162,12 +167,14 @@ class RoomDraw:
         Returns:
             int ou None: Index de la salle choisie, ou None si annulé
         """
-        self.draw_rooms()
-        rooms = []
-        for room in self.current_draw:
-            room_name = room['room']
-            color = room['color']
-            rooms.append(create_room(room_name,color))
+        
+        valide = False
+        while not(valide):
+            rooms = self.draw_rooms()
+            for room in rooms:
+                if room.cost == 0:
+                    valide = True
+
         # Fond semi-transparent
         overlay = pygame.Surface(surface.get_size())
         overlay.fill((0, 0, 0))
@@ -206,15 +213,15 @@ class RoomDraw:
             y = centery - card_height // 2
             
             # Carte
-            card_color = color_map.get(color, couleurs["darkblue"])
-            pygame.draw.rect(surface, card_color, 
+            card_color = color_map.get(color, couleurs["grey"])
+            pygame.draw.rect(surface, couleurs["darkblue"], 
                            pygame.Rect(x, y, card_width, card_height))
-            pygame.draw.rect(surface, couleurs["blue2"], 
+            pygame.draw.rect(surface, card_color, 
                            pygame.Rect(x, y, card_width, card_height), 5)
             
             # Numéro
-            num_text = text.font2.render(f"{i+1}", True, "black")
-            surface.blit(num_text, (x + 10, y + 10))
+            num_text = text.room_font.render(f"{i+1}", True, "white")
+            surface.blit(num_text, (x + card_width//2, y - 30))
             
             # Nom de la salle (multiligne si nécessaire)
             words = room_name.split()
@@ -236,26 +243,32 @@ class RoomDraw:
             
             # Afficher le nom
             for j, line in enumerate(lines):
-                line_text = text.inventory_font.render(line, True, "white")
+                line_text = text.room_font.render(line, True, "white")
                 line_rect = line_text.get_rect(center=(x + card_width//2, 
-                                                       y + 40 + j * 25))
+                                                       y + 120 + j * 25))
                 surface.blit(line_text, line_rect)
             
             # Couleur de la salle
             color_text = text.inventory_font.render(f"({color})", True, "white")
-            color_rect = color_text.get_rect(center=(x + card_width//2, y + 120))
+            color_rect = color_text.get_rect(center=(x + card_width//2, y + 180))
             surface.blit(color_text, color_rect)
 
             # Coût
-            cost_text = text.inventory_font.render(f"{cost} gemmes")
+            if cost > 0:
+                if cost == 1:
+                    cost_text = text.inventory_font.render(f"{cost} gemme",  True, "white")
+                else:
+                    cost_text = text.inventory_font.render(f"{cost} gemmes",  True, "white")
+                cost_rect = cost_text.get_rect(center=(x + card_width//2, y + 300))
+                surface.blit(cost_text, cost_rect)
         
         # Instructions
         text.ligne_texte_centre(f"Gemmes: {inventory.gems} | Dés: {inventory.dice}", 
-                               surface, offsety=180, font=text.inventory_font, color="white")
+                               surface, offsety=200, font=text.inventory_font, color="white")
         text.ligne_texte_centre("Appuyez sur 1, 2 ou 3 pour choisir", 
-                               surface, offsety=210, font=text.inventory_font, color="white")
+                               surface, offsety=230, font=text.inventory_font, color="white")
         text.ligne_texte_centre("Appuyez sur R pour retirer (1 dé) | ESC pour annuler", 
-                               surface, offsety=240, font=text.inventory_font, color="white")
+                               surface, offsety=260, font=text.inventory_font, color="white")
         
         pygame.display.flip()
         
@@ -271,7 +284,6 @@ class RoomDraw:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_1:
                         choice = 0
-                        waiting = False
                     elif event.key == pygame.K_2:
                         choice = 1
                         waiting = False
@@ -283,7 +295,12 @@ class RoomDraw:
                             return self.display_draw(surface, inventory)
                         else:
                             print("Pas assez de dés!")
-                    elif event.key == pygame.K_ESCAPE:
+                    if rooms[choice].cost <= inventory.gems:
+                        inventory.gems -= rooms[choice].cost
+                        waiting = False
+                    else:
+                        text.afficher_message_temps("Pas assez de gemmes")
+                    if event.key == pygame.K_ESCAPE:
                         return None
 
-        return create_room(room_name,color)
+        return rooms[choice]

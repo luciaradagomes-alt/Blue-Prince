@@ -222,28 +222,7 @@ class Yellow(Room) :
             return self.display_services(self.inventory)
         
         message= [f"Vous êtes dans {self.name}."]
-        if self.cost > 0 :
-            
-            reponse = ''
-            while reponse != 'o' and reponse != 'n':
-                message.append(f"Coût d'entrée : {self.cost} gemme/s.")
-                message.append(f"Souhaitez-vous dépenser {self.cost} gemme/s ?")
-                reponse = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
-
-            reponse = pygame.event.get()
-            if reponse.key == pygame.K_o:
-                if self.inventory.gems < self.cost :
-                    message.append(f"Vous n'avez pas assez de gemmes. Vous êtes en manque de {self.cost - self.inventory.gems} gemme/s.")
-                    return False
-                message.append("Vous avez fait le bon choix !")
-                self.inventory.gems -= self.cost
-                if self.inventory.gems < 5 :
-                    message.append("Économisez bien vos gemmes ! Vous n'en avez à peine :(")
-                return self.shop_interface(self.inventory)
-            else:    
-                message.append("Pas de shopping pour le moment.")
-                return False
-             
+                     
     def shop_interface(self) :
         """Interface générale des magasins
         
@@ -601,27 +580,6 @@ class Orange(Room):
         """
 
         message = [f"Vous êtes dans {self.name} !"]
-        
-        if self.cost>0 :
-            reponse = ''
-            while reponse != 'o' and reponse != 'n':
-                message.append(f"Coût d'entrée : {self.cost} gemme/s.")
-                message.append(f"Souhaitez-vous dépenser {self.cost} gemme/s ?")
-                reponse = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
-
-            reponse = pygame.event.get()
-            if reponse.key == pygame.K_o:
-                if self.inventory.gems < self.cost :
-                    message.append(f"Vous n'avez pas assez de gemmes. Vous êtes en manque de {self.cost - self.inventory.gems} gemme/s.")
-                    return False
-                message.append("Vous avez fait le bon choix !")
-            else:    
-                message.append("Vous ne souhaitez pas explorer la pièce.")
-                return False
-            
-            self.inventory.gems -= self.cost
-            if self.inventory.gems < 5 :
-                message.append("Économisez bien vos gemmes ! Vous n'en avez à peine :(")
         
         if self.available_items and not self.visited :
             for item_name, _ in self.available_items.items():
@@ -1033,30 +991,6 @@ class Blue(Room):
         """
 
         message = [f"Vous êtes dans {self.name} !"]
-
-        if self.cost > 0 :
-
-            reponse = ''
-            while reponse != 'o' and reponse != 'n':
-                message.append(f"Coût d'entrée : {self.cost} gemme/s.")
-                message.append(f"Souhaitez-vous dépenser {self.cost} gemme/s ?")
-                reponse = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
-
-            reponse = pygame.event.get()
-            if reponse.key == pygame.K_o:
-                if self.inventory.gems < self.cost :
-                    message.append(f"Vous n'avez pas assez de gemmes. Vous êtes en manque de {self.cost - self.inventory.gems} gemme/s.")
-                    return False
-                message.append("Vous avez fait le bon choix !")
-            else:    
-                message.append("Vous ne souhaitez pas explorer la pièce.")
-                return False
-            
-            self.inventory.gems -= self.cost
-            if self.inventory.gems < 5 :
-                message.append("Économisez bien vos gemmes ! Vous n'en avez à peine :(")
-                
-        message = [f"Vous êtes dans {self.name} !"]
         if self.name == "Ballroom":
             if self.inventory.gems > 2 :
                 message.append(f"Vos gemmes ont disparu ! \n    - {self.inventory.gems + 2} gemmes")
@@ -1250,33 +1184,6 @@ class Purple(Room):
         
         """
 
-        message = [f"Vous êtes dans {self.name} !"]
-
-        if self.cost>0 :
-            reponse = ''
-            while reponse != 'o' and reponse != 'n':
-                message.append(f"Coût d'entrée : {self.cost} gemme/s.")
-                message.append(f"Souhaitez-vous dépenser {self.cost} gemme/s ?")
-                reponse = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
-
-            reponse = pygame.event.get()
-            if reponse.key == pygame.K_o:
-                if self.inventory.gems < self.cost :
-                    message.append(f"Vous n'avez pas assez de gemmes. Vous êtes en manque de {self.cost - self.inventory.gems} gemme/s.")
-                    return False
-                message.append("Vous avez fait le bon choix !")
-            else:    
-                message.append("Vous ne souhaitez pas explorer la pièce.")
-                return False
-
-            if self.inventory.gems < self.cost :
-                message.append(f"Vous n'avez pas assez de gemmes. Vous êtes en manque de {self.cost - self.inventory.gems} gemme/s.")
-                return False
-            
-            self.inventory.gems -= self.cost
-            if self.inventory.gems < 5 :
-                message.append("Économisez bien vos gemmes ! Vous n'en avez à peine :(")
-        
         message = [f"Vous êtes dans {self.name} !"]
 
         if self.name == "Bedroom":
@@ -1715,31 +1622,6 @@ class Green(Room):
         
         """
 
-        message = [f"Vous êtes dans la pièce {self.name}."]
-
-        if self.cost > 0 :
-            
-            reponse = ''
-            while reponse != 'o' and reponse != 'n':
-                message.append(f"Coût d'entrée : {self.cost} gemme/s.")
-                message.append(f"Souhaitez-vous dépenser {self.cost} gemme/s ?")
-                reponse = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
-
-            reponse = pygame.event.get()
-            if reponse.key == pygame.K_o:
-                if self.inventory.gems < self.cost :
-                    message.append(f"Vous n'avez pas assez de gemmes. Vous êtes en manque de {self.cost - self.inventory.gems} gemme/s.")
-                    return False
-                message.append("Vous avez fait le bon choix !")
-            else:    
-                message.append("Vous ne souhaitez pas explorer la pièce.")
-                return False
-            
-            
-            self.inventory.gems -= self.cost
-            if self.inventory.gems < 5 :
-                message.append("Économisez bien vos gemmes ! Vous n'en avez à peine :(")
-        
         message = [f"Vous êtes dans la pièce {self.name}."]
 
         has_bonus, bonus_amount = self.bonus

@@ -52,12 +52,13 @@ class Inventory:
         self.metal_detector = False
 
     def show_inventory(self,screen):
-        """ Permet d'afficher l'inventaire du joueur sur l'interface graphique
+        """ Permet d'afficher l'inventaire du joueur sur l'interface graphique.
 
         Parameters:
         - screen : Surface
             La surface sur laquelle on affiche l'inventaire (écran du jeu)
         """
+        
         width = screen.get_width() - 640
         height = screen.get_height()//2 - 60
         inventaire = pygame.Surface((width,height))
@@ -90,7 +91,7 @@ class Inventory:
         self.steps -= 1
     
     def pick_up(self,object,screen,nb=1):
-        """ Définit les actions réalisées lorsqu'on ramasse un objet dans le manoir
+        """ Définit les actions réalisées lorsqu'on ramasse un objet dans le manoir.
 
         Parameters:
         - object : Objet
@@ -101,6 +102,7 @@ class Inventory:
         Raises:
         - TypeError: Si l'argument n'est pas un objet
         """
+
         if type(object) != Objet:
             raise TypeError("Ce n'est pas un objet")
         
@@ -184,7 +186,7 @@ class Inventory:
             self.metal_detector = True
 
     def buy(self,room):
-        """ Permet au joueur d'acheter un objet, sous condition qu'il ait assez de pièces
+        """ Permet au joueur d'acheter un objet, sous condition qu'il ait assez de pièces.
 
         Parameters:
         - room : Room
@@ -206,12 +208,13 @@ class Inventory:
             self.steps += object.steps
     
     def open_door(self,niveau):
-        """ Permet au joueur d'ouvrir une porte
+        """ Permet au joueur d'ouvrir une porte.
 
         Parameters:
         - niveau : int
             Indique combien de clés le joueur devra dépenser pour ouvrir cette porte
         """
+
         print(f"La porte est vérouillée à clé. Voulez-vous l'ouvrir? Cela coûtera {niveau} clé", end='')
         if niveau != 1:
             print("s.")

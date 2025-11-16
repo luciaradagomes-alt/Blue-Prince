@@ -28,6 +28,7 @@ class Player:
     """
 
     def __init__(self, start_x, start_y, tile_size=128):
+        
         self.tile_x = start_x 
         self.tile_y = start_y
         self.tile_size = tile_size
@@ -44,25 +45,26 @@ class Player:
         self.current_room = None
         
     def get_pixel_position(self):
-        """Retourne la position en pixels pour l'affichage
+        """Retourne la position en pixels pour l'affichage.
         
         Returns:
-        - tuple
+        - tuple(int, int)
             Retourne la position en pixels pour l'affichage
         """
         return (self.pixel_x, self.pixel_y)
     
     def get_tile_position(self):
-        """Retourne la position en tuiles
+        """Retourne la position en tuiles.
 
         Returns:
-        - tuple
+        - tuple(int, int)
             Retourne la position en tuiles pour l'affichage
         """
+
         return (self.tile_x, self.tile_y)
     
     def can_move_to(self, dx, dy, game_map):
-        """Vérifie si le joueur peut se déplacer vers la case adjacente
+        """Vérifie si le joueur peut se déplacer vers la case adjacente.
         
         Parameters:
         - dx : int
@@ -78,6 +80,7 @@ class Player:
         - str
             Message personnalisé
         """
+
         new_x = self.tile_x + dx
         new_y = self.tile_y + dy
         
@@ -112,7 +115,7 @@ class Player:
         return True, "OK"
     
     def move(self, dx, dy, game_map):
-        """Déplace le joueur d'une tuile (avec animation)
+        """Déplace le joueur d'une tuile (avec animation).
         
         Parameters:
         - dx : int
@@ -139,9 +142,9 @@ class Player:
             door = game_map.get_room_at(self.tile_x, self.tile_y).get_door_to(
                 game_map.get_room_at(self.tile_x + dx, self.tile_y + dy)
             )
-            # Ici vous pouvez ajouter une interface pour confirmer
-            # Pour l'instant, on ouvre automatiquement si assez de clés
+            
             if self.inventory.keys >= door.lock_level:
+
                 # Option: utiliser kit de crochetage pour niveau 1
                 if door.lock_level == 1 and self.inventory.lockpick_kit:
                     print(f"Porte ouverte avec le kit de crochetage !")
@@ -163,12 +166,13 @@ class Player:
         return True
     
     def update(self, dt):
-        """Met à jour l'animation de déplacement
+        """Met à jour l'animation de déplacement.
         
         Parameters:
         - dt : int
             Temps 
         """
+
         if not self.is_moving:
             return
         
@@ -198,14 +202,15 @@ class Player:
             self.is_moving = False
     
     def draw(self, surface, camera_offset=(0, 0)):
-        """Dessine le joueur
+        """Dessine le joueur.
         
         Parameters:
         - surface: Surface
             Surface prise par le joueur
-        - camera_offset: tuple
+        - camera_offset: tuple(int, int)
             Camera offset centré en (0, 0)
         """
+
         draw_x = self.pixel_x - camera_offset[0] + self.tile_size // 2
         draw_y = self.pixel_y - camera_offset[1] + self.tile_size // 2
         

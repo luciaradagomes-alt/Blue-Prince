@@ -26,15 +26,16 @@ class Door:
             self.lock_level = lock_level
         
         self.locked = (self.lock_level > 0)
-        self.discovered = False  # Le joueur a-t-il vu cette porte ?
+        self.discovered = False  
     
     def generate_lock_level(self):
-        """Génère aléatoirement le niveau de verrouillage
+        """Génère aléatoirement le niveau de verrouillage.
         
         Returns:
         - int
             Renvoie le niveau de verrouillage
         """
+
         # Probabilités : 49% ouvert, 35% niveau 1, 15% niveau 2, 1% niveau 3
         rand = random.random()
         if rand < 0.49:
@@ -47,11 +48,12 @@ class Door:
             return 3
     
     def unlock(self):
-        """Déverrouille la porte"""
+        """Déverrouille la porte."""
+
         self.locked = False
     
     def get_other_room(self, current_room):
-        """Retourne l'autre salle connectée par cette porte
+        """Retourne l'autre salle connectée par cette porte.
         
         Parameters:
         - current_room: Room
@@ -77,16 +79,15 @@ class Door:
         status = "ouverte" if not self.locked else f"verrouillée (niveau {self.lock_level})"
         return f"Porte {status} entre {self.room_a.room.name} et {self.room_b.room.name}"
 
-
 class RoomNode:
-    """Représente une salle dans le graphe du manoir avec ses connexions
+    """Représente une salle dans le graphe du manoir avec ses connexions.
     
     Attributes
     - room : Room
         Indique la pièce où se trouve le joueur
-    - position : Room
+    - position : tuple(int, int)
         Indique la position du joueur
-    - doors : dict
+    - doors : dict[Door]
         Indique les portes de la pièce et leurs positions
     """
     
@@ -96,10 +97,10 @@ class RoomNode:
         self.doors = {} 
     
     def add_door(self, direction, door):
-        """Ajoute une porte dans une direction
+        """Ajoute une porte dans une direction.
         
         Parameters:
-        - direction
+        - direction : tuple(int, int)
             Indique la direction où la porte va être ajoutée
         - door: Door
             Indique la porte qui sera ajoutée
@@ -108,20 +109,21 @@ class RoomNode:
         self.doors[direction] = door
     
     def get_door(self, direction):
-        """Récupère la porte dans une direction
+        """Récupère la porte dans une direction.
 
         Parameters:
-        - direction
+        - direction : tuple(int, int)
             Indique la direction où de la porte cible
 
         Returns:
         - tuple
             Renvoie la direction de la porte
         """
+
         return self.doors.get(direction)
     
     def get_door_to(self, target_room_node):
-        """Trouve la porte menant à une salle spécifique
+        """Trouve la porte menant à une salle spécifique.
         
         Parameters:
         - target_room_node: RoomNode
@@ -138,13 +140,14 @@ class RoomNode:
         return None
     
     def get_adjacent_rooms(self):
-        """Retourne toutes les salles adjacentes accessibles
+        """Retourne toutes les salles adjacentes accessibles.
         
         Returns:
-        - list
+        - list[Room]
             Renvoie la liste de pièces adjacentes
 
         """
+
         adjacent = []
         for direction, door in self.doors.items():
             other_room = door.get_other_room(self)

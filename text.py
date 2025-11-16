@@ -42,7 +42,7 @@ def ligne_texte(txt,screen,x,y,color="white",font=font1,modifier=None,marge=10,s
     if marge == 'same':
         marge = x
     elif type(marge) == str:
-        marge=10 #marge défaut
+        marge=10 # marge défaut
 
     if modifier == 'bold':
         font.bold = True
@@ -66,8 +66,7 @@ def ligne_texte(txt,screen,x,y,color="white",font=font1,modifier=None,marge=10,s
         if len(mots) > 1:
             txt_fin = mots[1] + sep + txt_fin
     texte([txt,txt_fin],screen,x,y,color,font,modifiers={0:modifier,1:modifier},marge=marge)
-    
-                
+                   
 def texte(txt,screen,x,y,color="white",font=font1,modifiers={},marge=10,leading=0):
     """ Ajoute à une Surface pygame plusieurs ligne de texte.
 
@@ -116,7 +115,6 @@ def texte(txt,screen,x,y,color="white",font=font1,modifiers={},marge=10,leading=
         nb_lignes = font.size(txt[i])[0]//(screen.get_width() - x - marge[i]) + 1
         y += nb_lignes * height + leading
 
-
 def ligne_texte_centre(txt,screen,offsetx=0,offsety=0,color="white",font=font1,modifier=None):
     """ Ajoute à une Surface pygame une ligne de texte, par défaut centralisée.
 
@@ -143,7 +141,6 @@ def ligne_texte_centre(txt,screen,offsetx=0,offsety=0,color="white",font=font1,m
     x = screen.get_width() / 2 - font.size(txt)[0] / 2 + offsetx
     y = screen.get_height() / 2 - font.size(txt)[1] / 2 + offsety
     return ligne_texte(txt,screen,x,y,color,font,modifier)
-
 
 def texte_centre(txt,screen,offsetx=0,offsety=0,color="white",font=font1,modifiers={}):
     """ Ajoute à une Surface pygame plusieurs lignes de texte, par défaut centralisées.
@@ -180,7 +177,6 @@ def texte_centre(txt,screen,offsetx=0,offsety=0,color="white",font=font1,modifie
             ligne_texte_centre(txt[i],screen,offsetx,offsety,color,font,modifiers[i])
             offsety += height
 
-
 def afficher_message_temps(txt,screen,time=1000,font=font3):
     """ Permet d'afficher un message au centre l'interface graphique pendant un temps donné.
 
@@ -202,7 +198,7 @@ def afficher_message_temps(txt,screen,time=1000,font=font3):
     pygame.display.flip()
     pygame.time.delay(time)
 
-def afficher_message(txt,screen,font=font3): # à FINIR
+def afficher_message(txt,screen,font=font3):
     """ Permet d'afficher un message au centre l'interface graphique.
 
     Parameters
@@ -221,7 +217,6 @@ def afficher_message(txt,screen,font=font3): # à FINIR
     screen.blit(noir,(0,0))
     texte_centre(txt,screen,font=font)
     pygame.display.flip()
-    # ne pas changer avant que le joueur clique sur un bouton !
 
 def afficher_salle(room,screen):
     """ Permet d'afficher le nom d'une salle sur l'interface graphique.

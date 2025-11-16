@@ -1,7 +1,7 @@
 import pygame
 
 class Tile:
-    """Classe qui représente une tuile de la carte (visuel d'une salle)
+    """Classe qui représente une tuile de la carte (visuel d'une salle).
     
     Attributes:
     - x : int
@@ -22,12 +22,12 @@ class Tile:
         self.rect = pygame.Rect(x, y, image.get_width(), image.get_height())
     
     def draw(self, surface, camera_offset=(0, 0)):
-        """Dessine la tuile sur la surface avec offset de caméra
+        """Dessine la tuile sur la surface avec offset de caméra.
         
         Parameters:
         - surface: Surface
             Surface choisie pour dessiner la tuile
-        - camera_offset : tuple
+        - camera_offset : tuple(int, int)
             Offset de la caméra
         """
         draw_x = self.x - camera_offset[0]

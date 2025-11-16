@@ -34,7 +34,7 @@ noir.set_alpha(10)
 tutorial_size = [screen.get_width() * 0.9, screen.get_height() * 0.9]
 
 def tutorial_screen(clavier):
-    """Gère l'écran de tutoriel
+    """Gère l'écran de tutoriel.
     
     Parameters:
         - clavier
@@ -103,7 +103,8 @@ message_timer = 0
 current_message = ""
 
 def init_game():
-    """Initialise une nouvelle partie"""
+    """Initialise une nouvelle partie."""
+    
     global game_map, player, room_draw_system, current_room_node, message_timer, current_message
     
     message_timer = 0
@@ -131,25 +132,27 @@ def init_game():
     print(f"Salle actuelle: {current_room_node.room.name}")
 
 def show_message(message, duration=2000):
-    """Affiche un message temporaire
+    """Affiche un message temporaire.
     
     Parameters:
-        - message 
+        - message : str
             Message qui s'affiche sur l'interface du jeu
         - duration : int
             Durée du message affiché
     """
+
     global current_message, message_timer
     current_message = message
     message_timer = duration
 
 def get_camera_offset():
-    """Calcule l'offset de la caméra pour centrer sur le joueur
+    """Calcule l'offset de la caméra pour centrer sur le joueur.
     
     Returns:
-    - tuple
+    - tuple(int, int)
         Renvoie la valeur offset en x et en y de la caméra
     """
+
     if player is None:
         return (0, 0)
     
@@ -172,14 +175,15 @@ def get_camera_offset():
     return (offset_x, offset_y)
 
 def draw_fog_of_war(surface, camera_offset):
-    """Dessine le brouillard de guerre sur les salles non visitées
+    """Dessine le brouillard de guerre sur les salles non visitées.
     
     Parameters:
-        - surface 
+        - surface : Surface
             Surface du brouillard
-        - camera_offset
+        - camera_offset : tuple(int, int)
             Offset de la caméra
     """
+
     fog_color = couleurs["darkblue"]  
     
     for (x, y), room_node in game_map.room_nodes.items():
@@ -200,7 +204,8 @@ def draw_fog_of_war(surface, camera_offset):
                            pygame.Rect(draw_x, draw_y, game_map.tile_size, game_map.tile_size), 1)
 
 def draw_ui():
-    """Dessine l'interface utilisateur (barre de stats)"""
+    """Dessine l'interface utilisateur (barre de stats)."""
+
     # Inventaire
     screen.blit(player.inventory.show_inventory(screen), (640, 0))
     
@@ -246,7 +251,8 @@ def draw_ui():
         screen.blit(message_surface, (centerx - 300, (3/4)*screen.get_height() - 40 ))
 
 def enter_current_room():
-    """Gère l'entrée dans la salle actuelle"""
+    """Gère l'entrée dans la salle actuelle."""
+
     global show_room_interface, current_room_node
     
     room = current_room_node.room
@@ -276,26 +282,28 @@ def enter_current_room():
             show_message(f"Vous avez exploré {room.name}")
     
 def check_win_condition():
-    """Vérifie si le joueur a gagné (atteint l'antichambre)
+    """Vérifie si le joueur a gagné (atteint l'antichambre).
     
     Returns:
     - bool
         Renvoie True si l'antichambre est retrouvée, False sinon
     """
+
     room = current_room_node.room
     if "antichambre" in room.name.lower() or "antechamber" in room.name.lower():
         return True
     return False
 
 def handle_movement(dx, dy):
-    """Gère les tentatives de déplacement du joueur
+    """Gère les tentatives de déplacement du joueur.
 
     Parameters:
-        - dx 
+        - dx : int
             Mouvement en x du joueur
-        - dy
+        - dy : int
             Mouvement en y du joueur
     """
+
     global current_room_node
     
     if player.is_moving:

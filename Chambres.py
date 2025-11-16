@@ -13,8 +13,6 @@ class Room:
         Liste de toutes les salles dans notre jeu
     - name : str
         Le nom de la pièce
-    - image : Surface
-        L'image pour la représenter dans l'interface graphique
     - color : str
         La couleur de la pièce (chaque couleur représente une catégorie de pièce)
     - visited : bool
@@ -78,9 +76,6 @@ class Room:
         """
         self.doors.append(room)
 
-    def __str__(self):
-        return f"{self.name} (pièce {self.color})"
-    
     def show_room(self,screen):
         """ Permet d'afficher la chambre dans laquelle se trouve le joueur sur l'interface graphique
 
@@ -99,6 +94,10 @@ class Room:
         text.texte(afficher,chambre,x=30,y=30,color="white",font=text.room_font,modifiers={0:'bold'})
         
         return chambre
+    
+    def __str__(self):
+        return f"{self.name} (pièce {self.color})"
+    
 
 class Yellow(Room) :
     """Ce sont des magasins dans lesquels il est possible d'échanger de l'or contre d'autres objets."""

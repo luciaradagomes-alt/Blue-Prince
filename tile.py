@@ -1,7 +1,20 @@
 import pygame
 
 class Tile:
-    """Représente une tuile de la carte (visuel d'une salle)"""
+    """Représente une tuile de la carte (visuel d'une salle)
+    
+    Attributes
+    - x : int
+        La coordonnée x (horizontale) du sommet en haut à gauche de la tuile
+    - y : int
+        La coordonnée y (verticale) du sommet en haut à gauche de la tuile
+    - image : Surface
+        L'image pour la représenter dans l'interface graphique
+    - name : str
+        Le nom de la pièce
+    - rect : Rectangle
+        Représente la région qu'occupe la tuile sur l'interface graphique
+    """
     
     def __init__(self, x, y, image, name):
         self.x = x

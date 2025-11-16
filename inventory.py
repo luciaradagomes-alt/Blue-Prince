@@ -89,7 +89,7 @@ class Inventory:
     def move(self):
         self.steps -= 1
     
-    def pick_up(self,object,screen,nb=1):
+    def pick_up(self,object,nb=1):
         """ Définit les actions réalisées lorsqu'on ramasse un objet dans le manoir
 
         Parameters:

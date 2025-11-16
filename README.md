@@ -26,9 +26,9 @@ Jeu simple basé sur le jeu Blue Prince.
 
 ## Utilisation
 
-    ```sh
-    python game.py
-    ```
+```sh
+python game.py
+```
 
 ## Contributeurs et contributrices
 

@@ -5,7 +5,7 @@ from player import Player
 from map import Map
 from room_draw import RoomDraw
 from colorpalette import couleurs
-from chambres import Yellow, Green
+from chambres import *
 
 pygame.init()
 taille = (1280,720)
@@ -20,10 +20,14 @@ dt = 0
 
 game_state = 'title'
 
+# Création des différents écrans/images
+
+# Page de titre
 titlecard = pygame.image.load("images\\titlecard.webp").convert()
 titlecard = pygame.transform.scale(titlecard, taille)
 text.ligne_texte_centre("Appuyez sur ESPACE pour commencer",titlecard,offsety=200)
 
+# Choix du clavier
 background = pygame.image.load("images\\background.jpg").convert()
 background = pygame.transform.scale(background, taille)
 background.set_alpha(30)
@@ -31,11 +35,11 @@ noir = pygame.Surface(taille)
 noir.fill([0,0,0])
 noir.set_alpha(10)
 
+
 tutorial_size = [screen.get_width() * 0.9, screen.get_height() * 0.9]
 
-def tutorial_screen(clavier):
+def tutorial_screen(clavier,tutorial_size=tutorial_size):
     # Ecran de tutoriel
-    global tutorial_size
     tutorial = pygame.Surface((tutorial_size[0],tutorial_size[1]))
     
     avant = clavier[0]
@@ -58,6 +62,8 @@ def tutorial_screen(clavier):
 
     return tutorial
 
+# Informations sur les objets
+
 tuto_objets = False
 tutorial_objets = pygame.Surface((tutorial_size[0],tutorial_size[1]))
 pygame.draw.rect(tutorial_objets, couleurs['darkblue'], pygame.Rect(0,0, tutorial_size[0], tutorial_size[1]))
@@ -78,6 +84,7 @@ text.texte(["6. Les objets spéciaux :",
             "  - détecteur de métal : augmente la chance de trouver des clés ou pièces d'or dans le manoir"],
             tutorial_objets, 40, text.font3.size("A")[1]*6 + 10*3, color="white", font=text.font2, marge='same')
 
+# Page de victoire
 mansion = pygame.image.load("images\\mansion.webp").convert()
 mansion = pygame.transform.scale(mansion, taille)
 
@@ -112,6 +119,7 @@ def init_game():
     # positionner le joueur a la case depart
     start_x, start_y = game_map.get_start_position()
     player = Player(start_x, start_y, game_map.tile_size)
+    Room.inventory = player.inventory
     
     # Système de tirage des pièces
     room_draw_system = RoomDraw()
@@ -120,7 +128,7 @@ def init_game():
     current_room_node = game_map.get_room_at(start_x, start_y)
     
     # marquage de la salle a visiter
-    current_room_node.room.visited = True
+    current_room_node.visited = True
     
     print(f"Jeu initialisé. Position de départ: {start_x}, {start_y}")
     print(f"Salle actuelle: {current_room_node.room.name}")
@@ -159,7 +167,7 @@ def draw_fog_of_war(surface, camera_offset):
     fog_color = couleurs["darkblue"]  #
     
     for (x, y), room_node in game_map.room_nodes.items():
-        if not room_node.room.visited:
+        if not room_node.visited:
             
             draw_x = x * game_map.tile_size - camera_offset[0]
             draw_y = y * game_map.tile_size - camera_offset[1]
@@ -167,7 +175,6 @@ def draw_fog_of_war(surface, camera_offset):
             #même couleur que le fond
             fog_surface = pygame.Surface((game_map.tile_size, game_map.tile_size))
             fog_surface.fill(fog_color)
-            
             
             surface.blit(fog_surface, (draw_x, draw_y))
             
@@ -225,11 +232,13 @@ def enter_current_room():
     """Gère l'entrée dans la salle actuelle"""
     global show_room_interface, current_room_node
     
-    room = current_room_node.room
-        
-    if not room.visited:
-        room.visited = True
-    
+    if not current_room_node.visited:
+        room = room_draw_system.display_draw(screen,player.inventory)
+    else:
+        room = current_room_node.room
+
+    current_room_node.enter_room_node(room)
+
     # if première fois qu'on entre, faire les actions spéciales
     if isinstance(room, Yellow):
         # 
@@ -253,7 +262,7 @@ def enter_current_room():
             quantity = random.randint(1, 3) if item == "pièce" else 1
             
             for _ in range(quantity):
-                player.inventory.pick_up(Objet(item), screen)
+                player.inventory.pick_up(Objet(item))
             
             show_message(f"Trouvé: {quantity} {item}(s) !")
 
@@ -307,13 +316,14 @@ def handle_movement(dx, dy):
             show_message("Porte ouverte avec le kit de crochetage !")
         else:
             show_message(f"Porte verrouillée - Besoin de {door.lock_level} clé(s)")
-            if event.key == pygame.K_SPACE:
-                if player.inventory.keys >= door.lock_level:
-                    player.inventory.keys -= door.lock_level
-                    door.unlock()
-                    show_message(f"Porte ouverte ! (Clés restantes: {player.inventory.keys})")
-                else: 
-                    show_message("Pas assez de clés")
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    if player.inventory.keys >= door.lock_level:
+                        player.inventory.keys -= door.lock_level
+                        door.unlock()
+                        show_message(f"Porte ouverte ! (Clés restantes: {player.inventory.keys})")
+                    else: 
+                        show_message("Pas assez de clés")
             
             return
     
@@ -329,7 +339,7 @@ def handle_movement(dx, dy):
     
     # Mettre à jour la salle actuelle et la marquer comme visitée
     current_room_node = game_map.get_room_at(player.tile_x, player.tile_y)
-    current_room_node.room.visited = True  # Marquer comme visitée dès qu'on y entre
+    enter_current_room()
     
     print(f"Déplacement vers {current_room_node.room.name} à ({player.tile_x}, {player.tile_y})")
 
@@ -418,7 +428,7 @@ while running:
                     import random
                     items = ["pièce", "gemme", "clé", "banane", "pelle"]
                     item = random.choice(items)
-                    player.inventory.pick_up(Objet(item), screen)
+                    player.inventory.pick_up(Objet(item))
                     show_message(f"Ramassé: {item}")
                 
                 # Debug
@@ -434,7 +444,7 @@ while running:
                         handle_movement(1, 0)
                 
                 # Entrer dans la salle
-                if event.key == pygame.K_e and not tutorial_show:
+                if event.key == pygame.K_SPACE and not tutorial_show:
                     enter_current_room()
                 
                 # Tirer des pièces
@@ -447,7 +457,7 @@ while running:
                     import random
                     items = ["pièce", "gemme", "clé", "banane", "pelle"]
                     item = random.choice(items)
-                    player.inventory.pick_up(Objet(item), screen)
+                    player.inventory.pick_up(Objet(item))
                     show_message(f"Ramassé: {item}")
                 
                 # Debug

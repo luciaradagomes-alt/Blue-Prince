@@ -2,12 +2,19 @@ import random
 import pygame
 from colorpalette import couleurs
 import text
+from chambres import *
+
+rooms_by_color = {"blue": Blue.rooms,
+                  "red": Red.rooms,
+                  "orange": Orange.rooms,
+                  "purple": Purple.rooms,
+                  "yellow": Yellow.rooms,
+                  "green": Green.rooms}
 
 class RoomDraw:
     """Gère le système de tirage et de choix des pièces"""
     
     def __init__(self):
-        self.available_rooms = []  # Pool de salles disponibles
         self.current_draw = []  # Les 3 salles actuellement tirées
         self.room_weights = {
             "blue": 2,
@@ -17,6 +24,7 @@ class RoomDraw:
             "yellow": 1,
             "green": 1
         }
+        self.set_available_rooms(rooms_by_color)
         # Modificateurs temporaires (ex: Greenhouse augmente les verts)
         self.weight_modifiers = {}
     
@@ -27,8 +35,8 @@ class RoomDraw:
         - rooms_by_color: dict {"blue": [Room1, Room2], "red": [...], ...}
         """
         self.available_rooms = []
-        for color, rooms in rooms_by_color.items():
-            for room in rooms:
+        for color in rooms_by_color.keys():
+            for room in rooms_by_color[color]:
                 self.available_rooms.append({
                     "room": room,
                     "color": color,
@@ -88,7 +96,7 @@ class RoomDraw:
             # Extraire les salles et poids
             rooms = [r[0] for r in temp_pool]
             weights = [r[1] for r in temp_pool]
-            
+
             # Tirer une salle
             chosen = random.choices(rooms, weights=weights, k=1)[0]
             drawn.append(chosen)
@@ -154,6 +162,12 @@ class RoomDraw:
         Returns:
             int ou None: Index de la salle choisie, ou None si annulé
         """
+        self.draw_rooms()
+        rooms = []
+        for room in self.current_draw:
+            room_name = room['room']
+            color = room['color']
+            rooms.append(create_room(room_name,color))
         # Fond semi-transparent
         overlay = pygame.Surface(surface.get_size())
         overlay.fill((0, 0, 0))
@@ -182,30 +196,33 @@ class RoomDraw:
             "green": couleurs["green"]
         }
         
-        for i, room_data in enumerate(self.current_draw):
-            room = room_data["room"]
-            color = room_data["color"]
+        i = 0
+        for room in rooms:
+            room_name = room.name
+            color = room.color
+            cost = room.cost
             
             x = start_x + i * (card_width + card_spacing)
             y = centery - card_height // 2
             
             # Carte
-            card_color = color_map.get(color, couleurs["grey"])
+            card_color = color_map.get(color, couleurs["darkblue"])
             pygame.draw.rect(surface, card_color, 
                            pygame.Rect(x, y, card_width, card_height))
-            pygame.draw.rect(surface, couleurs["lightblue"], 
+            pygame.draw.rect(surface, couleurs["blue2"], 
                            pygame.Rect(x, y, card_width, card_height), 5)
             
             # Numéro
-            num_text = text.font2.render(f"{i+1}", True, "white")
+            num_text = text.font2.render(f"{i+1}", True, "black")
             surface.blit(num_text, (x + 10, y + 10))
             
             # Nom de la salle (multiligne si nécessaire)
-            room_name = room.name
             words = room_name.split()
             lines = []
             current_line = ""
             
+            i += 1
+
             for word in words:
                 test_line = current_line + " " + word if current_line else word
                 if len(test_line) > 15:  # Limite de caractères par ligne
@@ -228,6 +245,9 @@ class RoomDraw:
             color_text = text.inventory_font.render(f"({color})", True, "white")
             color_rect = color_text.get_rect(center=(x + card_width//2, y + 120))
             surface.blit(color_text, color_rect)
+
+            # Coût
+            cost_text = text.inventory_font.render(f"{cost} gemmes")
         
         # Instructions
         text.ligne_texte_centre(f"Gemmes: {inventory.gems} | Dés: {inventory.dice}", 
@@ -265,5 +285,5 @@ class RoomDraw:
                             print("Pas assez de dés!")
                     elif event.key == pygame.K_ESCAPE:
                         return None
-        
-        return choice
+
+        return create_room(room_name,color)

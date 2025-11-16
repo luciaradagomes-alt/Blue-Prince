@@ -4,7 +4,8 @@ import os
 import random
 from tile import Tile
 from door import Door, RoomNode
-from chambres import Room, Yellow, Green
+from chambres import *
+from colorpalette import couleurs
 
 class Map:
     def __init__(self):
@@ -23,7 +24,8 @@ class Map:
             "orange": "assets/orange_rooms",
             "purple": "assets/purple_rooms",
             "yellow": "assets/yellow_rooms",
-            "green": "assets/green_rooms"
+            "green": "assets/green_rooms",
+            "vide": "assets/vide"
         }
 
         # chargement des images pour chaque catégorie
@@ -53,6 +55,7 @@ class Map:
                 except Exception as e:
                     print(f"Erreur chargement {filename}: {e}")
         print(f"{len(images)} images chargées depuis {folder}")
+        
         return images
 
     def load_from_json(self, path="map_layout.json"):
@@ -71,10 +74,24 @@ class Map:
         elif color == "green":
             if room_name in Green.rooms:
                 return Green(room_name)
-        
-        # Fallback: créer une Room générique
-        # Vous devrez implémenter les autres types (Blue, Red, etc.)
-        return Room(room_name, color)
+        elif color == "blue":
+            if room_name in Blue.rooms:
+                return Blue(room_name)
+        elif color == "purple":
+            if room_name in Purple.rooms:
+                return Purple(room_name)
+        elif color == "red":
+            if room_name in Red.rooms:
+                return Red(room_name)
+        elif color == "orange":
+            if room_name in Orange.rooms:
+                return Orange(room_name)
+        elif color == "start":
+            return Blue("Entrance Hall")
+        elif color == "end":
+            return Blue("Antechamber")
+        else:
+            raise ValueError("Ce n'est pas une couleur valable")
 
     def generate_map(self):
         """Création de la carte à partir du layout avec génération des portes"""
@@ -96,44 +113,19 @@ class Map:
                     image = self.room_images["end"][cell_name]
                     room_color = "end"
 
-                # Pour les salles random
-                elif cell_name == "0":
-                    # Choix de la couleur selon pondération
-                    chosen_color = random.choices(colors, weights=[weights[c] for c in colors])[0]
-                    available_rooms = list(self.room_images[chosen_color].keys())
-                    if not available_rooms:
-                        for c in colors:
-                            if self.room_images[c]:
-                                available_rooms = list(self.room_images[c].keys())
-                                chosen_color = c
-                                break
-                    cell_name = random.choice(available_rooms)
-                    image = self.room_images[chosen_color][cell_name]
-                    room_color = chosen_color
-
-                # Pour la sécurité
                 else:
-                    found = False
-                    for c in colors + ["start", "end"]:
-                        if cell_name in self.room_images[c]:
-                            image = self.room_images[c][cell_name]
-                            room_color = c
-                            found = True
-                            break
-                    if not found:
-                        fallback_color = "blue" if self.room_images["blue"] else next(iter(self.room_images))
-                        available_rooms = list(self.room_images[fallback_color].keys())
-                        cell_name = random.choice(available_rooms)
-                        image = self.room_images[fallback_color][cell_name]
-                        room_color = fallback_color
+                    image = self.room_images["vide"]["tuile_vide"]
+                    room_color = "vide"
 
                 # Créer la tuile
-                tile = Tile(x * self.tile_size, y * self.tile_size, image, cell_name)
+                tile = Tile(x * self.tile_size, y * self.tile_size, cell_name, room_color)
                 self.tiles.append(tile)
                 
                 # Créer le RoomNode
-                room_obj = self.create_room_object(cell_name, room_color)
-                room_node = RoomNode(room_obj, (x, y))
+                room_node = RoomNode((x, y),tile)
+                if room_color == "start" or room_color == "end":
+                    room_obj = self.create_room_object(cell_name, room_color)
+                    room_node.enter_room_node(room_obj)
                 self.room_nodes[(x, y)] = room_node
 
         # Phase 2: Créer les portes entre salles adjacentes
@@ -175,7 +167,7 @@ class Map:
             for x, cell in enumerate(row):
                 cell_name = self._clean_name(cell)
                 if cell_name in self.room_images.get("start", {}):
-                    return (x, y)
+                    return (2, 8)
         return (0, 0)  # Fallback
 
     def draw(self, surface, camera_offset=(0, 0)):

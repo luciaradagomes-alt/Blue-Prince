@@ -1,4 +1,7 @@
 import random
+from chambres import Room
+from tile import Tile
+import pygame
 
 class Door:
     """Représente une porte entre deux salles"""
@@ -49,11 +52,22 @@ class Door:
 class RoomNode:
     """Représente une salle dans le graphe du manoir avec ses connexions"""
     
-    def __init__(self, room, position):
-        self.room = room  # Objet Room (Yellow, Green, etc.)
+    def __init__(self, position, tile):
+        self.room = None  # Objet Room (Yellow, Green, etc.)
+        self.tile = tile
         self.position = position  # (x, y) en tuiles
+        self.visited = False
         self.doors = {}  # {direction: Door} où direction = 'north', 'south', 'east', 'west'
     
+    def _clean_name(self, name):
+        """Nettoie le nom d'une salle pour correspondre aux fichiers."""
+        return name.strip().replace(" ", "_").lower()
+
+    def enter_room_node(self,room):
+        self.room = room
+        self.visited = True
+        self.room.enter_room()
+
     def add_door(self, direction, door):
         """Ajoute une porte dans une direction"""
         self.doors[direction] = door
@@ -77,6 +91,6 @@ class RoomNode:
             if other_room:
                 adjacent.append((direction, other_room, door))
         return adjacent
-    
+
     def __str__(self):
         return f"RoomNode({self.room.name} at {self.position})"

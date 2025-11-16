@@ -193,9 +193,10 @@ def afficher_message_temps(txt,screen,time=1000,font=font3):
     """
     noir = pygame.Surface((1280,720))
     noir.fill([0,0,0])
-    noir.set_alpha(70)
+    noir.set_alpha(128)
     screen.blit(noir,(0,0))
     texte_centre(txt,screen,font=font)
+    print(txt)
     pygame.display.flip()
     pygame.time.delay(time)
 

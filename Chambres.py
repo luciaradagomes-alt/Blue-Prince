@@ -7,9 +7,9 @@ import pygame
 from abc import ABC, abstractmethod
 
 def create_room(room_name,color):
-    if color == "yellow":
-        return Yellow(room_name)
-    elif color == "green":
+    #if color == "yellow":
+     #   return Yellow(room_name)
+    if color == "green":
         return Green(room_name)
     elif color == "blue":
         return Blue(room_name)
@@ -44,12 +44,12 @@ class Room(ABC) :
     
     inventory = Inventory()
     screen = None
-    possible = ["Commissary", "Kitchen", "Locksmith", "Laundry Room", "Bookshop", "The Armory", "Showroom", "Mount Holly Gift Shop",
+    possible = [#"Commissary", "Kitchen", "Locksmith", "Laundry Room", "Bookshop", "The Armory", "Showroom", "Mount Holly Gift Shop",
                 "Terrace", "Patio", "Courtyard", "Cloister", "Veranda", "Greenhouse", "Morning Room", "Secret Garden",
                 "Bedroom", "Boudoir", "Guest Bedroom", "Nursery", "Servant's Quarters", "Bunk Room", "Her Ladyship's Chamber", "Master Bedroom",
                 "Hallway", "West Wing Hall", "East Wing Hall", "Corridor", "Passageway", "Secret Passage", "Foyer", "Great Hall",
-                "Lavatory", "Chapel", "Maid's Chamber", "Archives", "Gymnasium", "Darkroom", "Weight Room", "Furnace",
-                "The Foundation", "Entrance Hall", "Spare Room", "Rotunda", "Parlor", "Billiard Room", "Gallery", "Room 8", "Closet", "Walk-in Closet", "Attic", "Storeroom", "Nook", "Garage", "Music Room", "Locker Room", "Den", "Wine Cellar", "Trophy Room", "Ballroom", "Pantry", "Rumpus Room", "Vault", "Office", "Drawing Room", "Study", "Library", "Chamber of Mirrors", "The Pool", "Drafting Studio", "Utility Closet", "Boiler Room", "Pump Room", "Security", "Workshop", "Laboratory", "Sauna", "Coat Check", "Mail Room", "Freezer", "Dining Room", "Observatory", "Conference Room", "Aquarium", "Antechamber", "Room 46"]
+                "Lavatory", "Chapel", "Maid's Chamber", "Archives", "Gymnasium", "Weight Room", "Furnace", #"Darkroom"
+                "The Foundation", "Spare Room", "Rotunda", "Parlor", "Billiard Room", "Gallery", "Room 8", "Closet", "Walk-in Closet", "Attic", "Storeroom", "Nook", "Garage", "Music Room", "Locker Room", "Den", "Wine Cellar", "Trophy Room", "Ballroom", "Pantry", "Rumpus Room", "Vault", "Office", "Drawing Room", "Study", "Library", "Chamber of Mirrors", "The Pool", "Drafting Studio", "Utility Closet", "Boiler Room", "Security", "Workshop", "Laboratory", "Sauna", "Coat Check", "Mail Room", "Freezer", "Dining Room", "Observatory", "Conference Room", "Aquarium", "Room 46"] #"Pump Room"
     
 
     def __init__(self, name : str, color : str):
@@ -105,9 +105,9 @@ class Room(ABC) :
         text.texte(afficher,chambre,x=30,y=30,color="white",font=text.room_font,modifiers={0:'bold'})
         
         return chambre
-
+"""
 class Yellow(Room) :
-    """Ce sont des magasins dans lesquels il est possible d’échanger de l’or contre d’autres objets.
+    '''Ce sont des magasins dans lesquels il est possible d’échanger de l’or contre d’autres objets.
 
     Attributes:
     ---------------
@@ -119,7 +119,7 @@ class Yellow(Room) :
         Items en vente dans le magasin
     - services : dict
         Services de la laverie
-    """
+    '''
     
     rooms = ["Commissary", "Kitchen", "Locksmith", "Laundry Room", "Bookshop", "The Armory", "Showroom", "Mount Holly Gift Shop"]
     
@@ -134,7 +134,7 @@ class Yellow(Room) :
         }
             
     def items(self):
-        """Renvoie la liste d'objets pour chacun des magasins"""
+        '''Renvoie la liste d'objets pour chacun des magasins'''
 
         if self.name == "Commissary" :
             items = {
@@ -196,7 +196,7 @@ class Yellow(Room) :
             return {} 
 
     def gem_cost(self):
-        """Indique le coût pour entrer dans la pièce"""
+        '''Indique le coût pour entrer dans la pièce'''
         
         cost = {"Commissary": 1, 
                 "Kitchen": 1, 
@@ -211,64 +211,69 @@ class Yellow(Room) :
         return cost[self.name]
             
     def enter_room(self) :
-        """Interface pour rentrer dans les magasins ou pièces jaunes.
-        """
-        if self.name == "Laundry Room" :
-            return self.display_services(self.inventory)
+        ''''''Interface pour rentrer dans les magasins ou pièces jaunes.
+        ''''''
+        #if self.name == "Laundry Room" :
+        #    return self.display_services()
+        #else:
+        return self.display_items()
                      
     def shop_interface(self) :
-        """Interface générale des magasins
-        """
-        message= ""
+        '''Interface générale des magasins
+        '''
+        message= [""]
         if self.name == "Commissary" :
-            message.append("\nMagasin du commissariat : ") 
+            message.append("Magasin du commissariat : ") 
         elif self.name == "Kitchen" :
-            message.append("\nNourriture dans le frigo : ")
+            message.append("Nourriture dans le frigo : ")
         elif self.name == "Locksmith" :
-            message.append("\nMagasin de la serrurerie : ")
+            message.append("Magasin de la serrurerie : ")
         elif self.name == "Showroom" :
-            message.append("\nObjets en vente de la salle d'exposition : ")
-        elif self.name == "Laundry Room" :
-            message.append("\nServices de la laverie :")
-            self.display_services(self.inventory)
-            return self.interaction_with_services(self.inventory)
+            message.append("Objets en vente de la salle d'exposition : ")
+        #elif self.name == "Laundry Room" :
+         #   message.append("Services de la laverie :")
+         #   self.display_services(self.inventory)
+         #   return self.interaction_with_services(self.inventory)
         elif self.name == "Bookshop" :
-            message.append("\nLivres en vente :")
+            message.append("Livres en vente :")
         elif self.name == "The Armory" :
-            message.append("\nArmes en vente :")
+            message.append("Armes en vente :")
         else :
-            message.append("\nSouvenirs en vente :")
+            message.append("Souvenirs en vente :")
 
         self.display_items(self.inventory)
         return self.interaction_with_items(self.inventory)
 
     def display_items(self) :
-        """Affiche les objets disponible dans le magasin
-        """
-        message= [f"Vous êtes dans {self.name}."]
+        '''Affiche les objets disponible dans le magasin
+        '''
+        message= [""]
         if not self.items_for_sale :
-            message.append("\nLe magasin est en rupture de stock, nous sommes désolés :(")
+            message.append("Le magasin est en rupture de stock, nous sommes désolés :(")
             return
         
         items_list = list(self.items_for_sale.items())
         for item, price in items_list:
             message.append(f"{item:.<18} {price} pièces")
-        message.append("\nAnnuler :(")
-        message.append(f"\nVotre argent : {self.inventory.coins} pièces")
+        
+        message.append("Annuler :(")
+        message.append(f"Votre argent : {self.inventory.coins} pièces")
+        self.message = message
+
 
     def interaction_with_items(self) :
-        """Gère les intéractions dans un magasin
-        """
-        message= [f"Vous êtes dans {self.name}."]
+        '''Gère les intéractions dans un magasin
+        '''
+        message= [""]
         while True :
-            message.append("\nQue souhaitez-vous acheter ?")
+            self.message.append("Que souhaitez-vous acheter ?")
             items_list = list(self.items_for_sale.items())
             if not items_list:
-                message.append("\nPlus rien à acheter ici revenez demain !")
+                self.message.append("Plus rien à acheter ici, revenez demain !")
                 return False
             for i, (item, price) in enumerate(items_list, 1):
-                message.append(f"  {i}. {item:.<18} {price} pièces")
-            message.append(f"  {len(items_list) + 1}. Annuler")
+                self.message.append(f"  {i}. {item:.<18} {price} pièces")
+            self.message.append(f"  {len(items_list) + 1}. Annuler")
             try:
                 response = int(input(f"Votre choix (1-{len(items_list) + 1}): "))
                 
@@ -300,25 +305,25 @@ class Yellow(Room) :
             
             except ValueError:
                 message.append("Veuillez entrer un nombre valide!")
-
+    
     def laundry_interface(self):
-        """Interface spécifique pour la laverie qui ne propose que des services (pas d'items)
-        """
+        '''Interface spécifique pour la laverie qui ne propose que des services (pas d'items)
+        '''
         self.display_services(self.inventory)
         return self.interaction_with_services(self.inventory) 
      
     def display_services(self):
-        """Affiche les services de la laverie"""
+        '''Affiche les services de la laverie'''
         message= [f"Vous êtes dans {self.name}."]
         message.append("\nServices disponibles:")
         services_list = list(self.services.items())
 
         for i, (service, price) in enumerate(services_list, 1):
             message.append(f"  {i}. {service:.<18} {price['cost']} pièces")
-
+    
     def interaction_with_services(self) :
-        """Gère les services dans la laverie
-        """
+        '''Gère les services dans la laverie
+        '''
         message= [f"Vous êtes dans {self.name}."]
         while True:
             message.append("\nSouhaitez-vous utiliser un service ?")
@@ -388,7 +393,8 @@ class Yellow(Room) :
             else:
                 message.append("\nAu revoir !")
                 return True
-
+        """
+    
 class Orange(Room):
     """Ce sont des couloirs, qui ont souvent beaucoup de portes
 
@@ -564,7 +570,7 @@ class Blue(Room):
     - available_items : dict
         Dictionnaire de tous les items se retrouvant dans la pièce
     """
-    rooms = ["The Foundation", "Spare Room", "Rotunda", "Parlor", "Billiard Room", "Gallery", "Room 8", "Closet", "Walk-in Closet", "Attic", "Storeroom", "Nook", "Garage", "Music Room", "Locker Room", "Den", "Wine Cellar", "Trophy Room", "Ballroom", "Pantry", "Rumpus Room", "Vault", "Office", "Drawing Room", "Study", "Library", "Chamber of Mirrors", "The Pool", "Drafting Studio", "Utility Closet", "Boiler Room", "Pump Room", "Security", "Workshop", "Laboratory", "Sauna", "Coat Check", "Mail Room", "Freezer", "Dining Room", "Observatory", "Conference Room", "Aquarium", "Room 46"]
+    rooms = ["The Foundation", "Spare Room", "Rotunda", "Parlor", "Billiard Room", "Gallery", "Room 8", "Closet", "Walk-in Closet", "Attic", "Storeroom", "Nook", "Garage", "Music Room", "Locker Room", "Den", "Wine Cellar", "Trophy Room", "Ballroom", "Pantry", "Rumpus Room", "Vault", "Office", "Drawing Room", "Study", "Library", "Chamber of Mirrors", "The Pool", "Drafting Studio", "Utility Closet", "Boiler Room", "Security", "Workshop", "Laboratory", "Sauna", "Coat Check", "Mail Room", "Freezer", "Dining Room", "Observatory", "Conference Room", "Aquarium", "Room 46"] #"Pump Room"
 
     def __init__(self, name:str):
         super().__init__(name, "blue")
@@ -682,8 +688,8 @@ class Blue(Room):
             return {}
         elif self.name == "Boiler Room":
             return {}
-        elif self.name == "Pump Room":
-            return {}
+        #elif self.name == "Pump Room":
+        #    return {}
         elif self.name == "Security":
             return {}
         elif self.name == "Workshop":
@@ -750,7 +756,7 @@ class Blue(Room):
             "Drafting Studio" : 2, 
             "Utility Closet" : 0, 
             "Boiler Room" : 1, 
-            "Pump Room" : 0, 
+            #"Pump Room" : 0, 
             "Security" : 0, 
             "Workshop" : 0, 
             "Laboratory" : 0, 
@@ -804,7 +810,7 @@ class Blue(Room):
             "Drafting Studio" : 0, 
             "Utility Closet" : 0, 
             "Boiler Room" : 0, 
-            "Pump Room" : 0, 
+            #"Pump Room" : 0, 
             "Security" : 0, 
             "Workshop" : 0, 
             "Laboratory" : 0, 
@@ -857,7 +863,7 @@ class Blue(Room):
             "Drafting Studio" : 0, 
             "Utility Closet" : 0, 
             "Boiler Room" : 0, 
-            "Pump Room" : 0, 
+            #"Pump Room" : 0, 
             "Security" : 0, 
             "Workshop" : 0, 
             "Laboratory" : 0, 
@@ -910,7 +916,7 @@ class Blue(Room):
             "Drafting Studio" : 0, 
             "Utility Closet" : 0, 
             "Boiler Room" : 0, 
-            "Pump Room" : 0, 
+            #"Pump Room" : 0, 
             "Security" : 0, 
             "Workshop" : 0, 
             "Laboratory" : 0, 
@@ -933,22 +939,31 @@ class Blue(Room):
         message = [""]
         if self.name == "Ballroom":
             if self.inventory.gems > 2 :
-                message.append(f"Vos gemmes ont disparu ! \n    - {self.inventory.gems + 2} gemmes")
+                message.append(f"Vos gemmes ont disparu !    - {self.inventory.gems + 2} gemmes")
                 self.inventory.gems = 2
             else:
                 message.append(f"Vous avez maintenant 2 gemmes !")
                 self.inventory.gems = 2
-
+        
+        """
         if self.name == "Pump Room" :
-            response = ''
-            while reponse != 'o' and reponse != 'n':
-                message.append(f"Voulez-vous vider la piscine ?")
-                response = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
-            if reponse.key == pygame.K_o:
-                message.append("Vous avez trouvé 12 pièces.")
-            else:
-                message.append("Vous préférez laisser la psicine telle qu'elle est.")
-
+            self.message.append(f"Voulez-vous vider la piscine ?")
+            self.message.append("Appuyez sur SPACE pour valider et ESCAPE pour sortir")
+            waiting = True
+            while waiting:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        return None
+                    
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_SPACE:
+                            self.message = ["Vous avez trouvé 12 pièces."]
+                            waiting = False
+                        elif event.key == pygame.K_ESCAPE:
+                            self.message = ["Vous préférez laisser la piscine telle qu'elle est."]
+                            waiting = False
+        """
+                            
         if self.name == "Sauna" :
             extra_steps = 15
             message.append(f"Petit moment de détente ! \n    + {extra_steps} pas")
@@ -1180,7 +1195,7 @@ class Red(Room):
         Dictionnaire de tous les items se retrouvant dans la pièce
     """
 
-    rooms = ["Lavatory", "Chapel", "Maid's Chamber", "Archives", "Gymnasium", "Darkroom", "Weight Room", "Furnace"] 
+    rooms = ["Lavatory", "Chapel", "Maid's Chamber", "Archives", "Gymnasium", "Weight Room", "Furnace"] #"Darkroom"
     
     def __init__(self, name:str):
         super().__init__(name, "red")
@@ -1230,8 +1245,8 @@ class Red(Room):
             return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
         elif self.name == "Gymnasium":
             return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
-        elif self.name == "Darkroom":
-            return dict(random.sample(list(room_items.items()), 1)) 
+        #elif self.name == "Darkroom":
+        #    return dict(random.sample(list(room_items.items()), 1)) 
         elif self.name == "Weight Room":
             return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
         elif self.name == "Furnace":
@@ -1246,7 +1261,7 @@ class Red(Room):
             "Maid's Chamber" : 0, 
             "Archives" : 0, 
             "Gymnasium" : 0, 
-            "Darkroom" : 0, 
+            #"Darkroom" : 0, 
             "Weight Room" : 0, 
             "Furnace" : 0
             }
@@ -1262,7 +1277,7 @@ class Red(Room):
             "Maid's Chamber" : 0, 
             "Archives" : 0, 
             "Gymnasium" : 0, 
-            "Darkroom" : 0, 
+            #"Darkroom" : 0, 
             "Weight Room" : 0, 
             "Furnace" : random.randint(0, 2)
             }
@@ -1278,7 +1293,7 @@ class Red(Room):
             "Maid's Chamber" : 0, 
             "Archives" : 0, 
             "Gymnasium" : 0, 
-            "Darkroom" : 0, 
+            #"Darkroom" : 0, 
             "Weight Room" : 0, 
             "Furnace" : 0
             }
@@ -1294,7 +1309,7 @@ class Red(Room):
             "Maid's Chamber" : 0, 
             "Archives" : 0, 
             "Gymnasium" : 0, 
-            "Darkroom" : 0, 
+            #"Darkroom" : 0, 
             "Weight Room" : 0, 
             "Furnace" : 0
             }
@@ -1312,7 +1327,11 @@ class Red(Room):
             message.append(f"Pas restants : {self.inventory.steps}")
         
         if self.name == "Maid's Chamber":
-            message.append(f"En faisant le ménage vous avez perdu : \n    - 2 pas\n    - 1 clé\n    - 1 gemme\n    - 1 pièce")
+            message.append("En faisant le ménage vous avez perdu :     ")
+            message.append("   - 2 pas")
+            message.append("   - 1 clé")
+            message.append("   - 1 gemme") 
+            message.append("   - 1 pièce")
             self.inventory.steps -= 2
             self.inventory.coins -= 1
             self.inventory.gems -= 1
@@ -1322,8 +1341,8 @@ class Red(Room):
             self.inventory.steps -= 2
 
         if self.name == "Chapel" :
-            message.append(f"Vous faites une donation de 1 pièce. L'église vous remercie !")
-            if self.inventory.coins >= 1:
+            if self.inventory.coins >= 1:    
+                message.append(f"Vous faites une donation de 1 pièce. L'église vous remercie !")
                 self.inventory.coins -= 1
             else :
                 message.append("Vous n'avez pas assez de pièces pour faire une donation :(")
@@ -1335,9 +1354,11 @@ class Red(Room):
                 message.append("Vous fouillez les archives et trouvez :")
             if self.name == "Gymnasium" :
                 message.append("Vous trouvez sur le banc :")
-            if self.name == "Darkroom" :
-                message.append("Vous ne voyez rien, vous ne pouvez pas explorer la pièce dans l'obscurité.")
-                message.append("Voulez vous allumer la lumière ?")
+            """
+            if self.name == #"Darkroom" :
+                self.message.append("Vous ne voyez rien, vous ne pouvez pas explorer la pièce dans l'obscurité.")
+                self.message.append("Voulez vous allumer la lumière ?")
+               
                 reponse = ''
                 while reponse != 'o' and reponse != 'n':
                     reponse = input("Tapez 'o' pour oui et 'n' pour non : ").lower()
@@ -1354,7 +1375,7 @@ class Red(Room):
                 message.append("La chaleur est intense, vous voulez partir. Mais, au moins vous avez trouvé quelques items :")
             for item_name, _ in self.available_items.items():
                 self.inventory.pick_up(Objet(item_name),self.screen)
-        
+            """
         if self.chest_spots_available>0:
             for i in range(self.chest_spots_available):
                 self.inventory.pick_up(Objet("coffre"),self.screen)
@@ -1533,7 +1554,7 @@ class Green(Room):
 
         has_bonus, bonus_amount = self.bonus
         if has_bonus and bonus_amount > 0:
-            message.append(f"Bonus ! \n    + {bonus_amount} gemme(s)")
+            message.append(f"Bonus !    + {bonus_amount} gemme(s)")
             self.inventory.gems += bonus_amount
 
         if self.available_items and not self.visited:

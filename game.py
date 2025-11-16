@@ -192,9 +192,10 @@ def draw_ui():
     screen.blit(current_room_node.room.show_room(screen), (640, screen.get_height() // 2 - 60))
     if current_room_node.room.message != "":
         text.texte(current_room_node.room.message,screen, 680, screen.get_height() // 2 + 10,font=text.room_font)
+    
 
     # Instructions
-    text.ligne_texte("I: Tutoriel | O: Liste objets | E: Entrer | Y: Ramasser (test) | T: Tirer des pièces",screen,640 + 15,screen.get_height() - 55, sep="| ",font=text.inventory_font)
+    text.ligne_texte("I: Tutoriel | O: Liste objets ",screen,640 + 15,screen.get_height() - 55, sep=" | ",font=text.inventory_font)
             
     # messages temporaires a render
     font = text.inventory_font
@@ -297,8 +298,8 @@ def handle_movement(dx, dy):
                 message.append("Cela coûtera 1 clé.")
                 text.ligne_texte_centre("Appuyez sur SPACE pour ouvrir ou ESCAPE pour sortir",screen,offsety=200,font=text.font2)
             else:
-                message.append("Vous n'avez pas assez de clés pour l'ouvrir", screen, font=text.font3)
-                text.afficher_message_temps(message,screen)
+                message.append("Vous n'avez pas assez de clés pour l'ouvrir")
+                text.afficher_message_temps(message, screen, font=text.font3)
                 return
             
             text.afficher_message(message,screen)
@@ -307,16 +308,21 @@ def handle_movement(dx, dy):
             waiting = True
             while waiting:
                 for event in pygame.event.get():
-                    if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                        if player.inventory.keys >= door.lock_level:
-                            player.inventory.keys -= door.lock_level
-                            door.unlock()
-                            show_message(f"Porte ouverte ! (Clés restantes: {player.inventory.keys})")
-                            waiting = False
-                        else: 
-                            show_message("Pas assez de clés")
-                            waiting = False
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_SPACE:
+                            if player.inventory.keys >= door.lock_level:
+                                player.inventory.keys -= door.lock_level
+                                door.unlock()
+                                show_message(f"Porte ouverte ! (Clés restantes: {player.inventory.keys})")
+                                waiting = False
+                            else: 
+                                show_message("Pas assez de clés")
+                                waiting = False
+                        elif event.key == pygame.K_ESCAPE:
+                            waiting = False 
+                        
             screen.blit(screen_empty,(0,0))
+            
             return
     
     # Effectuer le déplacement - IMPORTANT: mettre à jour la position ET démarrer l'animation

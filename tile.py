@@ -88,8 +88,8 @@ class Tile:
             self.color = "purple"
         elif name in Red.rooms:
             self.color = "red"
-        elif name in Yellow.rooms:
-            self.color = "yellow"
+        #elif name in Yellow.rooms:
+         #   self.color = "yellow"
         elif name in Orange.rooms:
             self.color = "orange"
         self.image = self.room_images[self.color][_clean_name(name)]  

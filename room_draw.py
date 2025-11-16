@@ -8,7 +8,7 @@ rooms_by_color = {"blue": Blue.rooms,
                   "red": Red.rooms,
                   "orange": Orange.rooms,
                   "purple": Purple.rooms,
-                  "yellow": Yellow.rooms,
+                  #"yellow": Yellow.rooms,
                   "green": Green.rooms}
 
 class RoomDraw:
@@ -186,7 +186,7 @@ class RoomDraw:
         
         # Titre
         text.ligne_texte_centre("Choisissez une pièce", surface, 
-                               offsety=-250, font=text.room_font, color="white")
+                               offsety=-250, font=text.font3, color="white")
         
         # Afficher les 3 salles
         card_width = 200
@@ -267,7 +267,7 @@ class RoomDraw:
                                surface, offsety=200, font=text.inventory_font, color="white")
         text.ligne_texte_centre("Appuyez sur 1, 2 ou 3 pour choisir", 
                                surface, offsety=230, font=text.inventory_font, color="white")
-        text.ligne_texte_centre("Appuyez sur R pour retirer (1 dé) | ESC pour annuler", 
+        text.ligne_texte_centre("Appuyez sur R pour retirer (1 dé)", 
                                surface, offsety=260, font=text.inventory_font, color="white")
         
         pygame.display.flip()
@@ -286,21 +286,24 @@ class RoomDraw:
                         choice = 0
                     elif event.key == pygame.K_2:
                         choice = 1
-                        waiting = False
                     elif event.key == pygame.K_3:
                         choice = 2
-                        waiting = False
                     elif event.key == pygame.K_r:
                         if self.redraw(inventory):
                             return self.display_draw(surface, inventory)
                         else:
-                            print("Pas assez de dés!")
-                    if rooms[choice].cost <= inventory.gems:
-                        inventory.gems -= rooms[choice].cost
-                        waiting = False
-                    else:
-                        text.afficher_message_temps("Pas assez de gemmes",surface)
-                    if event.key == pygame.K_ESCAPE:
-                        return None
-
+                            copy = surface.copy()
+                            text.afficher_message_temps("Pas assez de dés!",surface)
+                            surface.blit(copy,(0,0))
+                            pygame.display.flip()
+                    if choice != None:
+                        if rooms[choice].cost <= inventory.gems:
+                            inventory.gems -= rooms[choice].cost
+                            waiting = False
+                        else:
+                            copy = surface.copy()
+                            text.afficher_message_temps("Pas assez de gemmes",surface)
+                            surface.blit(copy,(0,0))
+                            pygame.display.flip()
+                    
         return rooms[choice]

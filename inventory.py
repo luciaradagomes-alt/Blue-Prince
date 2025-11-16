@@ -101,11 +101,16 @@ class Inventory:
         Raises:
         - TypeError: Si l'argument n'est pas un objet
         """
+        
+        screen_empty = screen.copy()
+
         if type(object) != Objet:
             raise TypeError("Ce n'est pas un objet")
         
+        message = [""]
         if object.food:
             self.steps += nb*object.steps
+            message.append(f"{nb} {object.name} obtenu(s)")
 
         if object.stackable:
             if object.name == 'pièce':
@@ -119,10 +124,10 @@ class Inventory:
             
             if object.name == 'dé':
                 self.dice += nb
+            message.append(f"{nb} {object.name} obtenu(s)")
 
         if object.locker or object.chest:
             
-            screen_empty = screen.copy()
 
             message = [f"Ceci est un {object.name}."]
             if self.keys > 0:
@@ -154,7 +159,7 @@ class Inventory:
                             for obj in object.objects.items():
                                 if obj[1] > 0:
                                     vide = False
-                                    self.pick_up(Objet(obj[0]),obj[1])
+                                    self.pick_up(Objet(obj[0]),screen,obj[1])
                             if vide:
                                 message += "... mais c'était vide :("
                             open = True
@@ -219,24 +224,32 @@ class Inventory:
 
         if object.name == "pelle":
             self.shovel = True
+            message.append(f"{object.name} obtenue")
 
         if object.name == "patte de lapin":
             self.rabbit_foot = True
+            message.append(f"{object.name} obtenue")
 
         if object.name == "marteau":
             self.hammer = True
+            message.append(f"{object.name} obtenu")
 
         if object.name == "kit de crochetage":
             self.lockpick_kit = True
+            message.append(f"{object.name} obtenu")
         
         if object.name == "détecteur de métal":
             self.metal_detector = True
+            message.append(f"{object.name} obtenu")
+
+        text.afficher_message_temps(message,screen)
+        screen.blit(screen_empty,(0,0))
 
     def buy(self,room):
         """ Permet au joueur d'acheter un objet, sous condition qu'il ait assez de pièces
 
         Parameters:
-        - room : Room
+        - room : Yellow
             Salle dans laquelle on cherche à acheter l'objet
 
         Raises:

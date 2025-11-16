@@ -2,10 +2,33 @@ import pygame
 from inventory import Inventory
 
 class Player:
-    """Gère le joueur, sa position et ses déplacements dans le manoir"""
-    
+    """Classe qui gère le joueur, sa position et ses déplacements dans le manoir.
+
+    Attributes
+    - tile_x : int
+        Position en x (en tuiles)
+    - tile_y : int
+        Position en y (en tuiles)
+    - tile_size : int
+        Taille de la tuile
+    - inventory : Inventory
+        Inventaire du joueur
+    - pixel_x : int
+        Position en x (en pixels)
+    - pixel_y : int
+        Position en y (en pixels)
+    - target_x : int
+        Position cible en x
+    - target_y : int
+        Position cible en y
+    - is_moving : bool
+        Indique si le joueur est en mouvement ou pas
+    - move_speed : int
+        Vitesse du mouvement du joueur (pixels par secondes)
+    """
+
     def __init__(self, start_x, start_y, tile_size=128):
-        self.tile_x = start_x  # Position en tuiles (pas en pixels)
+        self.tile_x = start_x 
         self.tile_y = start_y
         self.tile_size = tile_size
         self.inventory = Inventory()
@@ -16,20 +39,45 @@ class Player:
         self.target_x = self.pixel_x
         self.target_y = self.pixel_y
         self.is_moving = False
-        self.move_speed = 400  # pixels par seconde
+        self.move_speed = 400  
         
         self.current_room = None
         
     def get_pixel_position(self):
-        """Retourne la position en pixels pour l'affichage"""
+        """Retourne la position en pixels pour l'affichage
+        
+        Returns:
+        - tuple
+            Retourne la position en pixels pour l'affichage
+        """
         return (self.pixel_x, self.pixel_y)
     
     def get_tile_position(self):
-        """Retourne la position en tuiles"""
+        """Retourne la position en tuiles
+
+        Returns:
+        - tuple
+            Retourne la position en tuiles pour l'affichage
+        """
         return (self.tile_x, self.tile_y)
     
     def can_move_to(self, dx, dy, game_map):
-        """Vérifie si le joueur peut se déplacer vers la case adjacente"""
+        """Vérifie si le joueur peut se déplacer vers la case adjacente
+        
+        Parameters:
+        - dx : int
+            Déplacement en x du joueur
+        - dy : int
+            Déplacement en y du joueur
+        - game_map : Map
+            Carte du jeu
+
+        Returns:
+        - bool
+            True si le joueur peut se déplacer vers la case adjacente, False sinon
+        - str
+            Message personnalisé
+        """
         new_x = self.tile_x + dx
         new_y = self.tile_y + dy
         
@@ -64,7 +112,20 @@ class Player:
         return True, "OK"
     
     def move(self, dx, dy, game_map):
-        """Déplace le joueur d'une tuile (avec animation)"""
+        """Déplace le joueur d'une tuile (avec animation)
+        
+        Parameters:
+        - dx : int
+            Déplacement en x du joueur
+        - dy : int
+            Déplacement en y du joueur
+        - game_map : Map
+            Carte du jeu
+
+        Returns:
+        - bool
+            False si le joueur est déjà en mouvement, True sinon
+        """
         if self.is_moving:
             return False  # Déjà en mouvement
         
@@ -102,7 +163,12 @@ class Player:
         return True
     
     def update(self, dt):
-        """Met à jour l'animation de déplacement"""
+        """Met à jour l'animation de déplacement
+        
+        Parameters:
+        - dt : int
+            Temps 
+        """
         if not self.is_moving:
             return
         
@@ -132,7 +198,14 @@ class Player:
             self.is_moving = False
     
     def draw(self, surface, camera_offset=(0, 0)):
-        """Dessine le joueur"""
+        """Dessine le joueur
+        
+        Parameters:
+        - surface: Surface
+            Surface prise par le joueur
+        - camera_offset: tuple
+            Camera offset centré en (0, 0)
+        """
         draw_x = self.pixel_x - camera_offset[0] + self.tile_size // 2
         draw_y = self.pixel_y - camera_offset[1] + self.tile_size // 2
         

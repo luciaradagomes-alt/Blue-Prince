@@ -4,11 +4,22 @@ from colorpalette import couleurs
 import text
 
 class RoomDraw:
-    """Gère le système de tirage et de choix des pièces"""
+    """Classe qui gère le système de tirage et de choix des pièces
+    
+    Attributes:
+    - available_rooms : list
+        Pool de salles disponibles
+    - current_draw : list
+        Les 3 salles actuellement tirées
+    - room_weights : dict
+        Poids des classes de pièces
+    - weight_modifiers : dict
+        Modifie les poids des classes de pièces 
+    """
     
     def __init__(self):
-        self.available_rooms = []  # Pool de salles disponibles
-        self.current_draw = []  # Les 3 salles actuellement tirées
+        self.available_rooms = []
+        self.current_draw = []  
         self.room_weights = {
             "blue": 2,
             "red": 1,
@@ -23,8 +34,8 @@ class RoomDraw:
     def set_available_rooms(self, rooms_by_color):
         """Initialise le pool de salles disponibles
         
-        Args:
-            rooms_by_color: dict {"blue": [Room1, Room2], "red": [...], ...}
+        Parameters:
+        - rooms_by_color: dict {"blue": [Room1, Room2], "red": [...], ...}
         """
         self.available_rooms = []
         for color, rooms in rooms_by_color.items():
@@ -36,7 +47,14 @@ class RoomDraw:
                 })
     
     def add_temporary_rooms(self, rooms, color="special"):
-        """Ajoute des salles temporaires au pool (ex: Chamber of Mirrors)"""
+        """Ajoute des salles temporaires au pool (ex: Chamber of Mirrors)
+        
+        Parameters:
+        - rooms : list
+            Liste de pièces
+        - color : str
+            Couleur de la pièce
+        """
         for room in rooms:
             self.available_rooms.append({
                 "room": room,
@@ -48,9 +66,11 @@ class RoomDraw:
     def modify_weights(self, color, modifier):
         """Modifie temporairement le poids d'une couleur (ex: Greenhouse)
         
-        Args:
-            color: couleur à modifier
-            modifier: multiplicateur (ex: 2 pour doubler)
+        Parameters:
+        - color: str
+            couleur à modifier
+        - modifier: int
+            multiplicateur (ex: 2 pour doubler)
         """
         self.weight_modifiers[color] = modifier
     
@@ -61,8 +81,13 @@ class RoomDraw:
     def draw_rooms(self, num_rooms=3):
         """Tire aléatoirement des salles selon les poids
         
+        Parameters:
+        - num_rooms : int
+            Nombre de pièces tirées
+
         Returns:
-            list: Liste de 3 dictionnaires {"room": Room, "color": str}
+        - drawn : list 
+            Liste de 3 dictionnaires {"room": Room, "color": str}
         """
         if len(self.available_rooms) < num_rooms:
             print("Pas assez de salles disponibles!")
@@ -107,9 +132,15 @@ class RoomDraw:
     def redraw(self, inventory):
         """Retire à nouveau les salles (coûte 1 dé)
         
+        Parameters:
+        - inventory: Inventory
+            Inventaire du joueur
+
         Returns:
-            bool: True si succès, False si pas assez de dés
+        - bool: 
+            True si succès, False si pas assez de dés
         """
+
         if inventory.dice < 1:
             return False
         
@@ -120,13 +151,19 @@ class RoomDraw:
     def choose_room(self, choice_index, inventory, gem_cost=0):
         """Le joueur choisit une salle parmi les 3 tirées
         
-        Args:
-            choice_index: 0, 1 ou 2
-            inventory: Inventaire du joueur
-            gem_cost: Coût en gemmes pour choisir cette salle spécifique
+        Parameters:
+        - choice_index: int
+            Indice des choix 0, 1 ou 2
+        - inventory: Inventory
+            Inventaire du joueur
+        - gem_cost: int
+            Coût en gemmes pour choisir cette salle spécifique
         
         Returns:
-            Room ou None si choix invalide
+        - chosen_room : Room
+            Renvoie la pièce choisie
+        - None 
+            si choix invalide
         """
         if choice_index < 0 or choice_index >= len(self.current_draw):
             return None
@@ -150,9 +187,18 @@ class RoomDraw:
     
     def display_draw(self, surface, inventory):
         """Affiche l'interface de tirage des salles
-        
+
+        Parameters:
+        - surface: Surface
+            Surface de l'interface
+        - inventory : Inventory
+            Inventaire du joueur
+
         Returns:
-            int ou None: Index de la salle choisie, ou None si annulé
+        - choice :int
+            Indice de la salle choisie
+        - None
+            Si pas de choix effectué
         """
         # Fond semi-transparent
         overlay = pygame.Surface(surface.get_size())

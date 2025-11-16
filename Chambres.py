@@ -8,7 +8,22 @@ from abc import ABC, abstractmethod
 
 
 class Room(ABC) :
-    """Classe qui définit les pièces du jeu."""
+    """Classe abstraite qui définit les pièces du jeu.
+
+    Attributes
+    - possible : list[str] <<class attribute>>
+        Liste de toutes les salles dans notre jeu
+    - name : str
+        Le nom de la pièce
+    - color : str
+        La couleur de la pièce (chaque couleur représente une catégorie de pièce)
+    - visited : bool
+        Indique si la pièce a déjà été visitée
+    - doors : list[]
+        Liste des pièces qui peuvent être accédées à travers la pièce actuelle
+    - message : str
+        Message qui s'affiche sur l'interface 
+    """
     
     possible = ["Commissary", "Kitchen", "Locksmith", "Laundry Room", "Bookshop", "The Armory", "Showroom", "Mount Holly Gift Shop",
                 "Terrace", "Patio", "Courtyard", "Cloister", "Veranda", "Greenhouse", "Morning Room", "Secret Garden",
@@ -23,7 +38,8 @@ class Room(ABC) :
         self.color = color
         self.visited = False 
         self.doors = [] 
-        self.message = None
+        self.message = ""
+
     @property
     def name(self):
         return self.__name
@@ -35,16 +51,25 @@ class Room(ABC) :
             if name_cleaned in Room.possible:
                 self.__name = name_cleaned
                 return
-            message=f"Attention: '{name}' n'est pas dans la liste des salles possibles"
+            print(f"Attention: '{name}' n'est pas dans la liste des salles possibles")
             self.__name = name
         else:
             self.__name = name
     
     @abstractmethod
     def enter_room(self):
+        """Ajoute des effets lorsque le joueur rentre dans la pièce
+        
+        """
         pass
+
     def add_door(self, room):
-        """Ajoute une porte vers une nouvelle pièce"""
+        """Ajoute une porte vers une nouvelle pièce
+        
+        Parameters:
+        - room : Room
+            La pièce vers laquelle on ajoute une porte
+        """
         self.doors.append(room)
     
     def __str__(self):
@@ -54,28 +79,25 @@ class Room(ABC) :
         """ Permet d'afficher la chambre dans laquelle se trouve le joueur sur l'interface graphique
 
         Parameters:
-        -----------------
         - screen : Surface
             La surface sur laquelle on affiche la chambre (écran du jeu)
         """
-        width = screen.get_width()//2
+        width = screen.get_width()
         height = screen.get_height()//2 
         chambre = pygame.Surface((width,height))
         chambre.fill(couleurs["darkblue"])
         pygame.draw.rect(chambre,couleurs['brightblue'],pygame.Rect(0,0,width,height),width=15)
         #pygame.draw.rect(chambre,"black",pygame.Rect(0,0,width,height),width=3)
         
-        afficher = [f"Salle : {self.name}","------------------------------------------------------------------------------------------------"]
-                
+        afficher = [f"Salle : {self.name}","------------------------------------------------------------------------------------------------",self.message]       
         text.texte(afficher,chambre,x=30,y=30,color="white",font=text.room_font,modifiers={0:'bold'})
         
         return chambre
 
 class Yellow(Room) :
-    """Ce sont des magasins dans lesquels il est possible d’échanger de l’or contre d’autres objets.
+    """Ce sont des magasins dans lesquels il est possible d'échanger de l'or contre d'autres objets.
 
     Attributes:
-    ---------------
     - rooms : list[str] <<class attribute>>
         Liste de toutes les pièces vertes
     - cost : int
@@ -99,7 +121,12 @@ class Yellow(Room) :
         }
             
     def items(self):
-        """Renvoie la liste d'objets pour chacun des magasins"""
+        """Renvoie la liste d'objets pour chacun des magasins
+        
+        Returns:
+        - items_for_sale : dict
+            Renvoie un dictionnaire d'items et leur prix en pièces
+        """
 
         if self.name == "Commissary" :
             items = {
@@ -161,7 +188,12 @@ class Yellow(Room) :
             return {} 
 
     def gem_cost(self):
-        """Indique le coût pour entrer dans la pièce"""
+        """Indique le coût pour entrer dans la pièce
+        
+        Returns:
+        -int
+            Prix en gemmes de la pièce lors du premier tirage
+        """
         
         cost = {"Commissary": 1, 
                 "Kitchen": 1, 
@@ -179,10 +211,16 @@ class Yellow(Room) :
         """Interface pour rentrer dans les magasins ou pièces jaunes.
         
         Parameters:
-        ---------------
         - inventory : Inventory
             L'inventaire du joueur
         
+        Returns:
+        -display_services
+            Si le magasin est une laverie alors renvoie les service de celle-ci
+        -shop_interface
+            Interface du magasin qui n'est pas une laverie
+        -bool
+            Renvoie False si le joueur n'a pas assez de gemmes pour payer l'entrée au magasin lors du tirage ou si le joueur décide de ne pas explorer le magasin
         """
         if self.name == "Laundry Room" :
             return self.display_services(inventory)
@@ -214,9 +252,12 @@ class Yellow(Room) :
         """Interface générale des magasins
         
         Parameters:
-        ---------------
         - inventory : Inventory
             L'inventaire du joueur
+        
+        Returns:
+        -interaction_with_items
+            Gère les intéractions avec les items du magasin
         
         """
         message= [f"Vous êtes dans {self.name}."]
@@ -246,10 +287,8 @@ class Yellow(Room) :
         """Affiche les objets disponible dans le magasin
         
         Parameters:
-        ---------------
         - inventory : Inventory
             L'inventaire du joueur
-        
         """
         message= [f"Vous êtes dans {self.name}."]
         if not self.items_for_sale :
@@ -266,10 +305,12 @@ class Yellow(Room) :
         """Gère les intéractions dans un magasin
         
         Parameters:
-        ---------------
         - inventory : Inventory
             L'inventaire du joueur
         
+        Returns:
+        -bool
+            True si l'achat est réussi, False sinon
         """
         message= [f"Vous êtes dans {self.name}."]
         while True :
@@ -317,16 +358,19 @@ class Yellow(Room) :
         """Interface spécifique pour la laverie qui ne propose que des services (pas d'items)
         
         Parameters:
-        ---------------
         - inventory : Inventory
             L'inventaire du joueur
         
+        Returns:
+        -interaction_with_services
+            Gère les interactions avec les services de la laverie
         """
         self.display_services(inventory)
         return self.interaction_with_services(inventory) 
      
-    def display_services(self, inventory):
+    def display_services(self):
         """Affiche les services de la laverie"""
+
         message= [f"Vous êtes dans {self.name}."]
         message.append("\nServices disponibles:")
         services_list = list(self.services.items())
@@ -338,10 +382,12 @@ class Yellow(Room) :
         """Gère les services dans la laverie
         
         Parameters:
-        ---------------
         - inventory : Inventory
             L'inventaire du joueur
-        
+
+        Returns:
+        -bool
+            True si l'achat est réussi, False sinon
         """
         message= [f"Vous êtes dans {self.name}."]
         while True:
@@ -368,7 +414,7 @@ class Yellow(Room) :
                     service_name, action = services_list[0]
                     if inventory.coins < action["cost"] :
                         message.append(f"Pas assez d'argent :(")
-                        return
+                        return False
                     inventory.coins -= action["cost"]
                     
                     new_gems = inventory.coins
@@ -383,7 +429,7 @@ class Yellow(Room) :
                     service_name, action = services_list[1]
                     if inventory.coins < action["cost"] :
                         message.append(f"Pas assez d'argent :(")
-                        return
+                        return False
                     inventory.coins -= action["cost"]
                     
                     new_gems = inventory.keys
@@ -398,7 +444,7 @@ class Yellow(Room) :
                     service_name, action = services_list[2]
                     if inventory.coins < action["cost"] :
                         message.append(f"Pas assez d'argent :(")
-                        return
+                        return False
                     inventory.coins -= action["cost"]
                     
                     new_coins = inventory.keys
@@ -417,7 +463,6 @@ class Orange(Room):
     """Ce sont des couloirs, qui ont souvent beaucoup de portes
 
     Attributes:
-    ---------------
     - rooms : list[str] <<class attribute>>
         Liste de toutes les pièces oranges
     - cost : int
@@ -440,16 +485,17 @@ class Orange(Room):
         self.chest_spots_available = self.chest_spots()
         self.locker_spots_available = self.locker_spots()
         self.available_items = self.items() 
-        
-        
+               
     def items(self, inventory : Inventory):
         """Indique les items de la pièce
         
         Parameters:
-        ---------------
         - inventory : Inventory
             L'inventaire du joueur
         
+        Returns:
+        -dict
+            Renvoie un dictionnaire d'items disponibles dans la pièce
         """
         room_items = {
             "banane": 1, 
@@ -495,7 +541,12 @@ class Orange(Room):
             return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
 
     def gem_cost(self):
-        """Indique le coût pour entrer dans la pièce pièce"""
+        """Indique le coût pour entrer dans la pièce pièce
+        
+        Returns:
+        - int
+            Renvoie le coût en gemmes de la pièce lors du tirage
+        """
 
         cost = {
             "Hallway": 0,
@@ -511,7 +562,12 @@ class Orange(Room):
         return cost.get(self.name)
 
     def dig_spots(self):
-        """Indique le nombre d'endroits où creuser dans la pièce"""
+        """Indique le nombre d'endroits où creuser dans la pièce
+        
+        Returns:
+        -int
+            Renvoie le nombre d'endroits où creuser dans la pièce
+        """
 
         spots = {
             "Hallway": 0,
@@ -527,7 +583,12 @@ class Orange(Room):
         return spots.get(self.name)
 
     def chest_spots(self):
-        """Génère un nombre de coffres dans la pièce"""
+        """Indique le nombre de coffres dans la pièce
+        
+        Returns:
+        -int
+            Renvoie le nombre de coffres disponibles dans la pièce
+        """
 
         spots = {
             "Hallway": 0,
@@ -543,8 +604,12 @@ class Orange(Room):
         return spots.get(self.name)
     
     def locker_spots(self):
-        """Génère un nombre de lockers dans la pièce"""
-
+        """Indique le nombre de casiers dans la pièce
+        
+        Returns:
+        -int
+            Renvoie le nombre de casiers disponibles dans la pièce
+        """
         spots = {
             "Hallway": 0,
             "West Wing Hall": 0,
@@ -555,6 +620,7 @@ class Orange(Room):
             "Foyer": 0,
             "Great Hall": 0
             }
+        
         return spots.get(self.name)
 
     def enter_room(self, inventory : Inventory) :
@@ -564,7 +630,9 @@ class Orange(Room):
         ---------------
         - inventory : Inventory
             L'inventaire du joueur
-        
+        Returns:
+        - bool
+            True si l'entrée est réussi, False sinon
         """
 
         message = [f"Vous êtes dans {self.name} !"]
@@ -608,7 +676,6 @@ class Blue(Room):
     """Ce sont les pièces les plus communes, avec des effets variés
 
     Attributes:
-    ---------------
     - rooms : list[str] <<class attribute>>
         Liste de toutes les pièces bleues
     - cost : int
@@ -636,10 +703,12 @@ class Blue(Room):
         """Indique les items de la pièce
         
         Parameters:
-        ---------------
         - inventory : Inventory
             L'inventaire du joueur
         
+        Returns:
+        -dict
+            Renvoie un dictionnaire d'items disponibles dans la pièce
         """
         room_items = {
             "banane": 1, 
@@ -779,8 +848,12 @@ class Blue(Room):
             return {}
     
     def gem_cost(self):
-        """Indique le coût pour entrer dans la pièce"""
-
+        """Indique le coût pour entrer dans la pièce pièce
+        
+        Returns:
+        - int
+            Renvoie le coût en gemmes de la pièce lors du tirage
+        """
         cost = {
             "The Foundation" : 0,
             "Entrance Hall" : 0,
@@ -833,8 +906,12 @@ class Blue(Room):
         return cost.get(self.name)
 
     def dig_spots(self):
-        """Indique le nombre d'endroits où creuser dans la pièce"""
-
+        """Indique le nombre d'endroits où creuser dans la pièce
+        
+        Returns:
+        -int
+            Renvoie le nombre d'endroits où creuser dans la pièce
+        """
         spots = {
             "The Foundation" : random.randint(2, 5),
             "Entrance Hall" : 0,
@@ -886,8 +963,12 @@ class Blue(Room):
         return spots.get(self.name)
 
     def chest_spots(self):
-        """Indique le nombre de coffres dans la pièce"""
-
+        """Indique le nombre de coffres dans la pièce
+        
+        Returns:
+        -int
+            Renvoie le nombre de coffres disponibles dans la pièce
+        """
         spots = {
             "The Foundation" : 0,
             "Entrance Hall" : 0,
@@ -939,8 +1020,12 @@ class Blue(Room):
         return spots.get(self.name)
     
     def locker_spots(self):
-        """Indique le nombre de lockers dans la pièce"""
-
+        """Indique le nombre de casiers dans la pièce
+        
+        Returns:
+        -int
+            Renvoie le nombre de casiers disponibles dans la pièce
+        """
         spots = {
             "The Foundation" : 0,
             "Entrance Hall" : 0,
@@ -993,12 +1078,14 @@ class Blue(Room):
     
     def enter_room(self, inventory : Inventory) :
         """Gère les intéractions dans la pièce
-
+        
         Parameters:
-        ---------------
         - inventory : Inventory
             L'inventaire du joueur
-        
+
+        Returns:
+        - bool
+            True si l'entrée est réussi, False sinon
         """
 
         message = [f"Vous êtes dans {self.name} !"]
@@ -1067,7 +1154,6 @@ class Purple(Room):
     """Ce sont des chambres, qui ont souvent des effets permettant de regagner des pas
     
     Attributes:
-    ---------------
     - rooms : list[str] <<class attribute>>
         Liste de toutes les pièces violettes
     - cost : int
@@ -1096,10 +1182,12 @@ class Purple(Room):
         """Indique les items de la pièce
         
         Parameters:
-        ---------------
         - inventory : Inventory
             L'inventaire du joueur
         
+        Returns:
+        -dict
+            Renvoie un dictionnaire d'items disponibles dans la pièce
         """
         room_items = {
             "banane": 1, 
@@ -1146,8 +1234,12 @@ class Purple(Room):
             return dict(random.sample(list(room_items.items()), random.randint(1,3))) 
 
     def gem_cost(self):
-        """Indique le coût pour entrer dans la pièce"""
+        """Indique le coût pour entrer dans la pièce pièce
         
+        Returns:
+        - int
+            Renvoie le coût en gemmes de la pièce lors du tirage
+        """
         cost = {
             "Bedroom": 0,
             "Boudoir": 0,
@@ -1162,8 +1254,12 @@ class Purple(Room):
         return cost.get(self.name)
 
     def dig_spots(self):
-        """Indique le nombre d'endroits où creuser dans la pièce"""
-
+        """Indique le nombre d'endroits où creuser dans la pièce
+        
+        Returns:
+        -int
+            Renvoie le nombre d'endroits où creuser dans la pièce
+        """
         spots = {
             "Bedroom": 0,
             "Boudoir": 0,
@@ -1178,8 +1274,12 @@ class Purple(Room):
         return spots.get(self.name)
 
     def chest_spots(self):
-        """Indique le nombre de coffres dans la pièce"""
-
+        """Indique le nombre de coffres dans la pièce
+        
+        Returns:
+        -int
+            Renvoie le nombre de coffres disponibles dans la pièce
+        """
         spots = {
             "Bedroom": 0,
             "Boudoir": 0,
@@ -1194,8 +1294,12 @@ class Purple(Room):
         return spots.get(self.name)
     
     def locker_spots(self):
-        """Indique le nombre de lockers dans la pièce"""
-
+        """Indique le nombre de casiers dans la pièce
+        
+        Returns:
+        -int
+            Renvoie le nombre de casiers disponibles dans la pièce
+        """
         spots = {
             "Bedroom": 0,
             "Boudoir": 0,
@@ -1213,10 +1317,12 @@ class Purple(Room):
         """Gère les intéractions dans la pièce
         
         Parameters:
-        ---------------
         - inventory : Inventory
             L'inventaire du joueur
-        
+            
+        Returns:
+        - bool
+            True si l'entrée est réussi, False sinon
         """
 
         message = [f"Vous êtes dans {self.name} !"]
@@ -1296,7 +1402,6 @@ class Red(Room):
     """Ce sont des pièces qui ont souvent des caractéristiques ou des effets les rendant indésirables (peu de portes, retirent des pas, etc.)
     
     Attributes:
-    ---------------
     - rooms : list[str] <<class attribute>>
         Liste de toutes les pièces rouges
     - cost : int
@@ -1325,11 +1430,14 @@ class Red(Room):
         """Indique les items de la pièce
         
         Parameters:
-        ---------------
         - inventory : Inventory
             L'inventaire du joueur
         
+        Returns:
+        -dict
+            Renvoie un dictionnaire d'items disponibles dans la pièce
         """
+
         room_items = {
             "banane": 1, 
             "orange": 1, 
@@ -1375,8 +1483,12 @@ class Red(Room):
             return {} 
 
     def gem_cost(self):
-        """Indique le coût pour entrer dans la pièce"""
+        """Indique le coût pour entrer dans la pièce pièce
         
+        Returns:
+        - int
+            Renvoie le coût en gemmes de la pièce lors du tirage
+        """
         spots = {
             "Lavatory" : 0, 
             "Chapel" : 0, 
@@ -1391,8 +1503,12 @@ class Red(Room):
         return spots.get(self.name)
         
     def dig_spots(self):
-        """Indique le nombre d'endroits où creuser dans la pièce"""
-
+        """Indique le nombre d'endroits où creuser dans la pièce
+        
+        Returns:
+        -int
+            Renvoie le nombre d'endroits où creuser dans la pièce
+        """
         spots = {
             "Lavatory" : 0, 
             "Chapel" : 0, 
@@ -1407,8 +1523,12 @@ class Red(Room):
         return spots.get(self.name)    
 
     def chest_spots(self):
-        """Indique le nombre de coffres dans la pièce"""
-
+        """Indique le nombre de coffres dans la pièce
+        
+        Returns:
+        -int
+            Renvoie le nombre de coffres disponibles dans la pièce
+        """
         spots = {
             "Lavatory" : 0, 
             "Chapel" : 0, 
@@ -1423,8 +1543,12 @@ class Red(Room):
         return spots.get(self.name) 
     
     def locker_spots(self):
-        """Indique le nombre de casiers dans la pièce"""
-
+        """Indique le nombre de casiers dans la pièce
+        
+        Returns:
+        -int
+            Renvoie le nombre de casiers disponibles dans la pièce
+        """
         spots = {
             "Lavatory" : 0, 
             "Chapel" : 0, 
@@ -1442,10 +1566,12 @@ class Red(Room):
         """Gère les intéractions dans la pièce
         
         Parameters:
-        ---------------
         - inventory : Inventory
             L'inventaire du joueur
-        
+            
+        Returns:
+        - bool
+            True si l'entrée est réussi, False sinon
         """
 
         message = [f"Vous êtes dans {self.name} !"]
@@ -1513,7 +1639,6 @@ class Green(Room):
     """Ce sont des jardins d'intérieur, qui contiennent souvent des gemmes, des endroits où creuser, et des objets permanents
 
     Attributes:
-    ---------------
     - rooms : list[str] <<class attribute>>
         Liste de toutes les pièces vertes
     - cost : int
@@ -1546,11 +1671,14 @@ class Green(Room):
         """Indique les items de la pièce
         
         Parameters:
-        ---------------
         - inventory : Inventory
             L'inventaire du joueur
         
+        Returns:
+        -dict
+            Renvoie un dictionnaire d'items disponibles dans la pièce
         """
+
         room_items = {
             "banane": 1, 
             "orange": 1, 
@@ -1595,7 +1723,12 @@ class Green(Room):
             return dict(random.sample(list(room_items.items()), random.randint(1,2))) 
     
     def dig_spots(self):
-        """Indique le nombre d'endroits où creuser dans la pièce"""
+        """Indique le nombre d'endroits où creuser dans la pièce
+        
+        Returns:
+        -int
+            Renvoie le nombre d'endroits où creuser dans la pièce
+        """
 
         spots = {
             "Terrace": random.randint(1, 3),
@@ -1611,7 +1744,12 @@ class Green(Room):
         return spots.get(self.name)
     
     def chest_spots(self):
-        """Indique le nombre de coffres dans la pièce"""
+        """Indique le nombre de coffres dans la pièce
+        
+        Returns:
+        -int
+            Renvoie le nombre de coffres disponibles dans la pièce
+        """
 
         spots = {
             "Terrace": 0,
@@ -1627,7 +1765,12 @@ class Green(Room):
         return spots.get(self.name)
     
     def locker_spots(self):
-        """Indique le nombre de casiers dans la pièce"""
+        """Indique le nombre de casiers dans la pièce
+        
+        Returns:
+        -int
+            Renvoie le nombre de casiers disponibles dans la pièce
+        """
 
         spots = {
             "Terrace": 0,
@@ -1643,8 +1786,13 @@ class Green(Room):
         return spots.get(self.name)
 
     def gem_cost(self):
-        """Indique le coût pour entrer dans la pièce"""
+        """Indique le coût pour entrer dans la pièce pièce
         
+        Returns:
+        - int
+            Renvoie le coût en gemmes de la pièce lors du tirage
+        """
+
         cost = {
             "Terrace": 0,
             "Patio": 1,
@@ -1659,7 +1807,12 @@ class Green(Room):
         return cost.get(self.name)
 
     def gem_bonus(self):
-        """Indique si la pièce apporte des gemmes bonus ou pas, et la quantité"""
+        """Indique si la pièce apporte des gemmes bonus ou pas, et la quantité
+        
+        Returns:
+        -int
+            Renvoie le bonus en gemmes de la pièce
+        """
 
         rooms = {
             "Terrace": (True, random.randint(1, 2)),
@@ -1678,10 +1831,12 @@ class Green(Room):
         """Gère les intéractions dans la pièce
         
         Parameters:
-        ---------------
         - inventory : Inventory
             L'inventaire du joueur
-        
+            
+        Returns:
+        - bool
+            True si l'entrée est réussi, False sinon
         """
 
         message = [f"Vous êtes dans la pièce {self.name}."]

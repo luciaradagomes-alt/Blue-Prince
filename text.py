@@ -199,8 +199,8 @@ def afficher_message_temps(txt,screen,time=1000,font=font3):
     pygame.display.flip()
     pygame.time.delay(time)
 
-def afficher_message(txt,screen,font=font3): # à FINIR
-    """ Permet d'afficher un message au centre l'interface graphique.
+def afficher_message(txt,screen,font=font3):
+    """ Permet d'afficher un message au centre de l'interface graphique.
 
     Parameters
     - txt : list[str] | str
@@ -218,7 +218,8 @@ def afficher_message(txt,screen,font=font3): # à FINIR
     screen.blit(noir,(0,0))
     texte_centre(txt,screen,font=font)
     pygame.display.flip()
-    # ne pas changer avant que le joueur clique sur un bouton !
+        
+
 
 def afficher_salle(room,screen):
     """ Permet d'afficher le nom d'une salle sur l'interface graphique.

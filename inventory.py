@@ -89,7 +89,7 @@ class Inventory:
     def move(self):
         self.steps -= 1
     
-    def pick_up(self,object,nb=1):
+    def pick_up(self,object,screen,nb=1):
         """ Définit les actions réalisées lorsqu'on ramasse un objet dans le manoir
 
         Parameters:
@@ -121,50 +121,99 @@ class Inventory:
                 self.dice += nb
 
         if object.locker or object.chest:
+            
+            screen_empty = screen.copy()
+
             message = [f"Ceci est un {object.name}."]
             if self.keys > 0:
-                reponse = ''
-                while reponse != 'o' and reponse != 'n':
-                    message.append("Voulez-vous l'ouvrir ?")
-                    if object.locker or not self.hammer:
-                        message.append("Cela coûtera 1 clé.")
-                        text.afficher_message(message,screen)
-                    reponse = input("Tapez 'o' pour oui et 'n' pour non : ")
-                
-                reponse = pygame.event.get()
-                if reponse.key == pygame.K_o:
-                    if object.locker or not self.hammer:
-                        self.keys -= 1
-                    print("Ouvert")
-                    vide = True
-                    for obj in object.objects.items():
-                        if obj[1] > 0:
-                            vide = False
-                            self.pick_up(Objet(obj[0]),obj[1])
-                    if vide:
-                        print("... mais c'était vide :(")
+                message.append("Voulez-vous l'ouvrir ?")
+                if object.locker or not self.hammer:
+                    message.append("Cela coûtera 1 clé.")
+                    text.ligne_texte_centre("Appuyez sur SPACE pour ouvrir ou ESCAPE pour sortir",screen,offsety=200,font=text.font2)
             else:
-                print("Vous n'avez pas de clés pour l'ouvrir.")
-                
+                message.append("Vous n'avez pas assez de clés pour l'ouvrir", screen, font=text.font3)
+                text.afficher_message_temps(message,screen)
+                return
+            
+            text.afficher_message(message,screen)
+            pygame.display.flip()
+
+            waiting = True
+            while waiting:
+                for reponse in pygame.event.get():
+                    if reponse.type == pygame.QUIT:
+                        return None
+
+                    if reponse.type == pygame.KEYDOWN:
+                        
+                        if reponse.key == pygame.K_SPACE:
+                            if object.locker or not self.hammer:
+                                self.keys -= 1
+                            message = "Ouvert"
+                            vide = True
+                            for obj in object.objects.items():
+                                if obj[1] > 0:
+                                    vide = False
+                                    self.pick_up(Objet(obj[0]),obj[1])
+                            if vide:
+                                message += "... mais c'était vide :("
+                            open = True
+                            waiting = False
+                        
+                        if reponse.key == pygame.K_ESCAPE:
+                            open = False
+                            waiting = False
+
+            screen.blit(screen_empty,(0,0))
+            if open:
+                text.afficher_message_temps(message,screen)
+            pygame.display.flip()
+        
         if object.dig_spot:
-            print("Ceci est un endroit creusable.", end=" ")
+            
+            screen_empty = screen.copy()
+
+            message = [f"Ceci est un endroit creusable."]
+
             if self.shovel:
-                print("Voulez-vous le creuser ?")
-                reponse = ''
-                while reponse != 'o' and reponse != 'n':
-                    reponse = input("Tapez 'o' pour oui et 'n' pour non : ")
-                reponse = (reponse == 'o')
-                if reponse:
-                    print("Creusé")
-                    vide = True
-                    for obj in object.objects.items():
-                        if obj[1] > 0:
-                            vide = False
-                            self.pick_up(Objet(obj[0]),obj[1])
-                    if vide:
-                        print("... mais c'était vide :(")
+                message.append("Voulez-vous le creuser ?")
+                text.ligne_texte_centre("Appuyez sur SPACE pour creuser ou ESCAPE pour sortir",screen,offsety=200,font=text.font2)
             else:
-                print("Vous n'avez pas de pelle pour le creuser.")
+                message.append("Vous n'avez pas de pelle pour le creuser.")
+                return
+
+            text.afficher_message(message,screen)
+            pygame.display.flip()
+
+            waiting = True
+            while waiting:
+                for reponse in pygame.event.get():
+                    if reponse.type == pygame.QUIT:
+                        return None
+
+                    if reponse.type == pygame.KEYDOWN:
+                        
+                        if reponse.key == pygame.K_SPACE:
+                            message = "Creusé"
+                            vide = True
+                            for obj in object.objects.items():
+                                if obj[1] > 0:
+                                    vide = False
+                                    self.pick_up(Objet(obj[0]),obj[1])
+                            if vide:
+                                message += "... mais c'était vide :("
+                            open = True
+                            waiting = False
+                        
+                        if reponse.key == pygame.K_ESCAPE:
+                            open = False
+                            waiting = False
+
+            screen.blit(screen_empty,(0,0))
+            if open:
+                text.afficher_message_temps(message,screen)
+            pygame.display.flip()
+            
 
         # Objets spéciaux:
 

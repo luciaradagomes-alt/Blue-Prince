@@ -193,7 +193,6 @@ def draw_ui():
     # Instructions
     text.ligne_texte("I: Tutoriel | O: Liste objets | E: Entrer | Y: Ramasser (test) | T: Tirer des pièces",screen,640 + 15,screen.get_height() - 55, sep="| ",font=text.inventory_font)
             
-
     # messages temporaires a render
     font = text.inventory_font
     if message_timer > 0:
@@ -262,7 +261,7 @@ def enter_current_room():
             quantity = random.randint(1, 3) if item == "pièce" else 1
             
             for _ in range(quantity):
-                player.inventory.pick_up(Objet(item))
+                player.inventory.pick_up(Objet(item),screen)
             
             show_message(f"Trouvé: {quantity} {item}(s) !")
 
@@ -425,11 +424,7 @@ while running:
                 # Ramasser des objets (pour tester)
                 if event.key == pygame.K_y and not tutorial_show:
                     # Test: ajouter des objets aléatoires
-                    import random
-                    items = ["pièce", "gemme", "clé", "banane", "pelle"]
-                    item = random.choice(items)
-                    player.inventory.pick_up(Objet(item))
-                    show_message(f"Ramassé: {item}")
+                    player.inventory.pick_up(Objet("casier"),screen)
                 
                 # Debug
                 # Déplacements (seulement si pas en mouvement et pas dans l'inventaire)
@@ -457,7 +452,7 @@ while running:
                     import random
                     items = ["pièce", "gemme", "clé", "banane", "pelle"]
                     item = random.choice(items)
-                    player.inventory.pick_up(Objet(item))
+                    player.inventory.pick_up(Objet(item),screen)
                     show_message(f"Ramassé: {item}")
                 
                 # Debug

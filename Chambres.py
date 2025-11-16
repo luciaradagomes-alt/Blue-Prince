@@ -43,6 +43,7 @@ class Room(ABC) :
     """
     
     inventory = Inventory()
+    screen = None
     possible = ["Commissary", "Kitchen", "Locksmith", "Laundry Room", "Bookshop", "The Armory", "Showroom", "Mount Holly Gift Shop",
                 "Terrace", "Patio", "Courtyard", "Cloister", "Veranda", "Greenhouse", "Morning Room", "Secret Garden",
                 "Bedroom", "Boudoir", "Guest Bedroom", "Nursery", "Servant's Quarters", "Bunk Room", "Her Ladyship's Chamber", "Master Bedroom",
@@ -56,7 +57,7 @@ class Room(ABC) :
         self.color = color
         self.visited = False 
         self.doors = [] 
-        self.message = None
+        self.message = [""]
     
     @property
     def name(self):
@@ -211,28 +212,14 @@ class Yellow(Room) :
             
     def enter_room(self) :
         """Interface pour rentrer dans les magasins ou pièces jaunes.
-        
-        Parameters:
-        ---------------
-        - self.inventory : self.inventory
-            L'inventaire du joueur
-        
         """
         if self.name == "Laundry Room" :
             return self.display_services(self.inventory)
-        
-        message= [f"Vous êtes dans {self.name}."]
                      
     def shop_interface(self) :
         """Interface générale des magasins
-        
-        Parameters:
-        ---------------
-        - self.inventory : self.inventory
-            L'inventaire du joueur
-        
         """
-        message= [f"Vous êtes dans {self.name}."]
+        message= ""
         if self.name == "Commissary" :
             message.append("\nMagasin du commissariat : ") 
         elif self.name == "Kitchen" :
@@ -257,12 +244,6 @@ class Yellow(Room) :
 
     def display_items(self) :
         """Affiche les objets disponible dans le magasin
-        
-        Parameters:
-        ---------------
-        - self.inventory : self.inventory
-            L'inventaire du joueur
-        
         """
         message= [f"Vous êtes dans {self.name}."]
         if not self.items_for_sale :
@@ -277,12 +258,6 @@ class Yellow(Room) :
 
     def interaction_with_items(self) :
         """Gère les intéractions dans un magasin
-        
-        Parameters:
-        ---------------
-        - self.inventory : self.inventory
-            L'inventaire du joueur
-        
         """
         message= [f"Vous êtes dans {self.name}."]
         while True :
@@ -314,7 +289,7 @@ class Yellow(Room) :
                     
                     if confirm == 'o':
                         self.inventory.coins -= price
-                        self.inventory.pick_up(Objet(item_name))
+                        self.inventory.pick_up(Objet(item_name),self.screen)
                         message.append(f"\nAchat réussi!")
                         return True
                     else:
@@ -328,12 +303,6 @@ class Yellow(Room) :
 
     def laundry_interface(self):
         """Interface spécifique pour la laverie qui ne propose que des services (pas d'items)
-        
-        Parameters:
-        ---------------
-        - self.inventory : self.inventory
-            L'inventaire du joueur
-        
         """
         self.display_services(self.inventory)
         return self.interaction_with_services(self.inventory) 
@@ -349,12 +318,6 @@ class Yellow(Room) :
 
     def interaction_with_services(self) :
         """Gère les services dans la laverie
-        
-        Parameters:
-        ---------------
-        - self.inventory : self.inventory
-            L'inventaire du joueur
-        
         """
         message= [f"Vous êtes dans {self.name}."]
         while True:
@@ -457,11 +420,6 @@ class Orange(Room):
         
     def items(self):
         """Indique les items de la pièce
-        
-        Parameters:
-        ---------------
-        - self.inventory : self.inventory
-            L'inventaire du joueur
         """
         room_items = {
             "banane": 1, 
@@ -571,26 +529,19 @@ class Orange(Room):
 
     def enter_room(self) :
         """Gère les intéractions dans la pièce
-        
-        Parameters:
-        ---------------
-        - self.inventory : self.inventory
-            L'inventaire du joueur
-        
         """
-
-        message = [f"Vous êtes dans {self.name} !"]
         
+        message = [""]
         if self.available_items and not self.visited :
             for item_name, _ in self.available_items.items():
-                self.inventory.pick_up(Objet(item_name))
+                self.inventory.pick_up(Objet(item_name),self.screen)
         
         if self.chest_spots_available>0:
             for i in range(self.chest_spots_available):
-                self.inventory.pick_up("chest")
+                self.inventory.pick_up(Objet("coffre"),self.screen)
         if self.locker_spots_available>0:
             for i in range(self.locker_spots_available):
-                self.inventory.pick_up("locker") 
+                self.inventory.pick_up(Objet("casier"),self.screen) 
 
         self.visited = True
         return True
@@ -613,7 +564,7 @@ class Blue(Room):
     - available_items : dict
         Dictionnaire de tous les items se retrouvant dans la pièce
     """
-    rooms = ["The Foundation", "Entrance Hall", "Spare Room", "Rotunda", "Parlor", "Billiard Room", "Gallery", "Room 8", "Closet", "Walk-in Closet", "Attic", "Storeroom", "Nook", "Garage", "Music Room", "Locker Room", "Den", "Wine Cellar", "Trophy Room", "Ballroom", "Pantry", "Rumpus Room", "Vault", "Office", "Drawing Room", "Study", "Library", "Chamber of Mirrors", "The Pool", "Drafting Studio", "Utility Closet", "Boiler Room", "Pump Room", "Security", "Workshop", "Laboratory", "Sauna", "Coat Check", "Mail Room", "Freezer", "Dining Room", "Observatory", "Conference Room", "Aquarium", "Antechamber", "Room 46"]
+    rooms = ["The Foundation", "Spare Room", "Rotunda", "Parlor", "Billiard Room", "Gallery", "Room 8", "Closet", "Walk-in Closet", "Attic", "Storeroom", "Nook", "Garage", "Music Room", "Locker Room", "Den", "Wine Cellar", "Trophy Room", "Ballroom", "Pantry", "Rumpus Room", "Vault", "Office", "Drawing Room", "Study", "Library", "Chamber of Mirrors", "The Pool", "Drafting Studio", "Utility Closet", "Boiler Room", "Pump Room", "Security", "Workshop", "Laboratory", "Sauna", "Coat Check", "Mail Room", "Freezer", "Dining Room", "Observatory", "Conference Room", "Aquarium", "Room 46"]
 
     def __init__(self, name:str):
         super().__init__(name, "blue")
@@ -624,12 +575,8 @@ class Blue(Room):
         self.available_items = self.items() 
         
     def items(self):
-        """Indique les items de la pièce
+        """Indique les items de la pièce"""
         
-        Parameters:
-        - self.inventory : self.inventory
-            L'inventaire du joueur
-        """
         room_items = {
             "banane": 1, 
             "orange": 1, 
@@ -981,16 +928,9 @@ class Blue(Room):
         return spots[self.name]
     
     def enter_room(self) :
-        """Gère les intéractions dans la pièce
+        """Gère les intéractions dans la pièce"""
 
-        Parameters:
-        ---------------
-        - self.inventory : self.inventory
-            L'inventaire du joueur
-        
-        """
-
-        message = [f"Vous êtes dans {self.name} !"]
+        message = [""]
         if self.name == "Ballroom":
             if self.inventory.gems > 2 :
                 message.append(f"Vos gemmes ont disparu ! \n    - {self.inventory.gems + 2} gemmes")
@@ -1016,15 +956,17 @@ class Blue(Room):
 
         if self.available_items and not self.visited :
             for item_name, _ in self.available_items.items():
-                self.inventory.pick_up(Objet(item_name))
+                self.inventory.pick_up(Objet(item_name),self.screen)
         
         if self.chest_spots_available>0:
             for i in range(self.chest_spots_available):
-                self.inventory.pick_up("chest")
+                self.inventory.pick_up(Objet("coffre"),self.screen)
         if self.locker_spots_available>0:
             for i in range(self.locker_spots_available):
-                self.inventory.pick_up("locker") 
+                self.inventory.pick_up(Objet("casier"),self.screen) 
 
+        self.message = message
+        print(message)    
         self.visited = True
         return True
 
@@ -1059,12 +1001,6 @@ class Purple(Room):
         
     def items(self):
         """Indique les items de la pièce
-        
-        Parameters:
-        ---------------
-        - self.inventory : self.inventory
-            L'inventaire du joueur
-        
         """
         room_items = {
             "banane": 1, 
@@ -1176,16 +1112,9 @@ class Purple(Room):
     
     def enter_room(self) :
         """Gère les intéractions dans la pièce
-        
-        Parameters:
-        ---------------
-        - self.inventory : self.inventory
-            L'inventaire du joueur
-        
         """
 
-        message = [f"Vous êtes dans {self.name} !"]
-
+        message = [""]
         if self.name == "Bedroom":
             extra_steps = 2
             message.append(f"Vois avez très bien dormi ! \n     + {extra_steps} pas")
@@ -1205,7 +1134,7 @@ class Purple(Room):
             message.append(f"Vous voyez 3 clés sur le lit.\n    + 3 clés")
             self.inventory.keys +=3
 
-        message = [f"Vous êtes dans {self.name} !"]
+        
 
         if self.available_items and not self.visited :
             if self.name == "Bedroom" :
@@ -1218,15 +1147,17 @@ class Purple(Room):
                 message.append(random.choice(["Vous trouvez sur la table :", "Vous trouvez sur la chaisse :"]))
             
             for item_name, _ in self.available_items.items():
-                self.inventory.pick_up(Objet(item_name))
+                self.inventory.pick_up(Objet(item_name),self.screen)
 
         if self.chest_spots_available>0:
             for i in range(self.chest_spots_available):
-                self.inventory.pick_up("chest")
+                self.inventory.pick_up(Objet("coffre"),self.screen)
         if self.locker_spots_available>0:
             for i in range(self.locker_spots_available):
-                self.inventory.pick_up("locker") 
+                self.inventory.pick_up(Objet("casier"),self.screen) 
                 
+        self.message = message
+        print(message)    
         self.visited = True
         return True
 
@@ -1261,12 +1192,6 @@ class Red(Room):
 
     def items(self):
         """Indique les items de la pièce
-        
-        Parameters:
-        ---------------
-        - self.inventory : self.inventory
-            L'inventaire du joueur
-        
         """
         room_items = {
             "banane": 1, 
@@ -1378,16 +1303,9 @@ class Red(Room):
        
     def enter_room(self) :
         """Gère les intéractions dans la pièce
-        
-        Parameters:
-        ---------------
-        - self.inventory : self.inventory
-            L'inventaire du joueur
-        
         """
-
-        message = [f"Vous êtes dans {self.name} !"]
-
+        
+        message = [""]
         if self.name == "Weight Room":
             message.append(f"Soulever des poids vous fatigue beaucoup ! Vous perdez {self.inventory.steps//2} pas. Reposez-vous, avant de continuer.")
             self.inventory.steps = self.inventory.steps//2
@@ -1435,15 +1353,17 @@ class Red(Room):
             if self.name == "Furnace" :
                 message.append("La chaleur est intense, vous voulez partir. Mais, au moins vous avez trouvé quelques items :")
             for item_name, _ in self.available_items.items():
-                self.inventory.pick_up(Objet(item_name))
+                self.inventory.pick_up(Objet(item_name),self.screen)
         
         if self.chest_spots_available>0:
             for i in range(self.chest_spots_available):
-                self.inventory.pick_up("chest")
+                self.inventory.pick_up(Objet("coffre"),self.screen)
         if self.locker_spots_available>0:
             for i in range(self.locker_spots_available):
-                self.inventory.pick_up("locker")   
-                     
+                self.inventory.pick_up(Objet("casier"),self.screen)   
+
+        self.message = message
+        print(message)          
         self.visited = True
         return True
     
@@ -1482,12 +1402,6 @@ class Green(Room):
         
     def items(self):
         """Indique les items de la pièce
-        
-        Parameters:
-        ---------------
-        - self.inventory : self.inventory
-            L'inventaire du joueur
-        
         """
         room_items = {
             "banane": 1, 
@@ -1613,16 +1527,9 @@ class Green(Room):
         return rooms[self.name]
 
     def enter_room(self) :
-        """Gère les intéractions dans la pièce
-        
-        Parameters:
-        ---------------
-        - self.inventory : self.inventory
-            L'inventaire du joueur
-        
+        """Gère les intéractions dans la pièce       
         """
-
-        message = [f"Vous êtes dans la pièce {self.name}."]
+        message = [""]
 
         has_bonus, bonus_amount = self.bonus
         if has_bonus and bonus_amount > 0:
@@ -1632,14 +1539,16 @@ class Green(Room):
         if self.available_items and not self.visited:
             message.append("Objets découverts :")
             for item_name, _ in self.available_items.items():
-                self.inventory.pick_up(Objet(item_name))
+                self.inventory.pick_up(Objet(item_name),self.screen)
                 
         if self.chest_spots_available>0:
             for i in range(self.chest_spots_available):
-                self.inventory.pick_up("chest")
+                self.inventory.pick_up(Objet("coffre"),self.screen)
         if self.locker_spots_available>0:
             for i in range(self.locker_spots_available):
-                self.inventory.pick_up("locker") 
-                
+                self.inventory.pick_up(Objet("casier"),self.screen) 
+        
+        self.message = message
+        print(message)    
         self.visited = True
         return True

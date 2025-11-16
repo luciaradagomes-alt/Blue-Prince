@@ -20,7 +20,7 @@ class Objet:
         Détermine si l'objet est stackable (pièces d'or, gemmes, clés et dés)
     """
 
-    possible = ["pomme","banane","gâteau","repas","sandwich", "bacon et oeufs", "salade", "soupe", 
+    possible = ["pomme","banane","gâteau","repas","sandwich", "bacon et oeufs", "salade", "soupe", "orange",
                 "pièce", "gemme", "clé", "dé",
                 "coffre", "casier", "endroit creusable",
                 "pelle", "marteau", "patte de lapin", "kit de crochetage", "détecteur de métal", "levier cassé",
@@ -50,7 +50,7 @@ class Objet:
     @name.setter
     def name(self,name):
         if name not in Objet.possible:
-            raise ValueError("Ce n'est pas un objet")
+            raise ValueError(f"{name} n'est pas un objet")
         self.__name = name
 
     def is_stackable(self):
@@ -59,7 +59,7 @@ class Objet:
             self.stackable = True
 
     def is_food(self):
-        food = {"pomme" : 2, "banane" : 3, "salade" : 5, "soupe" : 5, "gâteau" : 10, "sandwich" : 15, "bacon et oeufs" : 15, "repas" : 25}
+        food = {"pomme" : 2, "banane" : 3, "salade" : 5, "soupe" : 5, "orange":5, "gâteau" : 10, "sandwich" : 15, "bacon et oeufs" : 15, "repas" : 25}
         if self.name in food:
             self.food = True
             self.steps = food[self.name]

@@ -120,6 +120,7 @@ def init_game():
     start_x, start_y = game_map.get_start_position()
     player = Player(start_x, start_y, game_map.tile_size)
     Room.inventory = player.inventory
+    Room.screen = screen
     
     # Système de tirage des pièces
     room_draw_system = RoomDraw()
@@ -189,6 +190,8 @@ def draw_ui():
     
     # Salle actuelle
     screen.blit(current_room_node.room.show_room(screen), (640, screen.get_height() // 2 - 60))
+    if current_room_node.room.message != "":
+        text.texte(current_room_node.room.message,screen, 680, screen.get_height() // 2 + 10,font=text.room_font)
 
     # Instructions
     text.ligne_texte("I: Tutoriel | O: Liste objets | E: Entrer | Y: Ramasser (test) | T: Tirer des pièces",screen,640 + 15,screen.get_height() - 55, sep="| ",font=text.inventory_font)
@@ -238,33 +241,6 @@ def enter_current_room():
 
     current_room_node.enter_room_node(room)
 
-    # if première fois qu'on entre, faire les actions spéciales
-    if isinstance(room, Yellow):
-        # 
-        result = room.enter_room(player.inventory)
-        if result:
-            show_message(f"Transaction effectuée dans {room.name}")
-    elif isinstance(room, Green):
-        # Jardin - interface console
-        result = room.enter_room(player.inventory)
-        if result:
-            show_message(f"Vous avez exploré {room.name}")
-    else:
-        # Salle générique
-        show_message(f"Vous explorez {room.name}")
-        
-        # ajout de quelques objets aléatoirement dans les salles génériques
-        import random
-        if random.random() < 0.3:  # 30% de chance
-            items = ["pièce", "gemme", "clé"]
-            item = random.choice(items)
-            quantity = random.randint(1, 3) if item == "pièce" else 1
-            
-            for _ in range(quantity):
-                player.inventory.pick_up(Objet(item),screen)
-            
-            show_message(f"Trouvé: {quantity} {item}(s) !")
-
 def check_win_condition():
     """Vérifie si le joueur a gagné (atteint l'antichambre)"""
     room = current_room_node.room
@@ -309,21 +285,38 @@ def handle_movement(dx, dy):
     
     # Si la porte est verrouillée, gérer l'ouverture
     if door.locked:
+        screen_empty = screen.copy()
         # Utiliser kit de crochetage si disponible et niveau 1
         if door.lock_level == 1 and player.inventory.lockpick_kit:
             door.unlock()
             show_message("Porte ouverte avec le kit de crochetage !")
         else:
-            show_message(f"Porte verrouillée - Besoin de {door.lock_level} clé(s)")
-            for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                    if player.inventory.keys >= door.lock_level:
-                        player.inventory.keys -= door.lock_level
-                        door.unlock()
-                        show_message(f"Porte ouverte ! (Clés restantes: {player.inventory.keys})")
-                    else: 
-                        show_message("Pas assez de clés")
+            message = [f"Cette porte est fermée à clé."]
+            if player.inventory.keys > 0:
+                message.append("Voulez-vous l'ouvrir ?")
+                message.append("Cela coûtera 1 clé.")
+                text.ligne_texte_centre("Appuyez sur SPACE pour ouvrir ou ESCAPE pour sortir",screen,offsety=200,font=text.font2)
+            else:
+                message.append("Vous n'avez pas assez de clés pour l'ouvrir", screen, font=text.font3)
+                text.afficher_message_temps(message,screen)
+                return
             
+            text.afficher_message(message,screen)
+            pygame.display.flip()
+
+            waiting = True
+            while waiting:
+                for event in pygame.event.get():
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                        if player.inventory.keys >= door.lock_level:
+                            player.inventory.keys -= door.lock_level
+                            door.unlock()
+                            show_message(f"Porte ouverte ! (Clés restantes: {player.inventory.keys})")
+                            waiting = False
+                        else: 
+                            show_message("Pas assez de clés")
+                            waiting = False
+            screen.blit(screen_empty,(0,0))
             return
     
     # Effectuer le déplacement - IMPORTANT: mettre à jour la position ET démarrer l'animation

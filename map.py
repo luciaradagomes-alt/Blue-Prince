@@ -66,32 +66,7 @@ class Map:
 
     def create_room_object(self, room_name, color):
         """Crée un objet Room approprié selon le type"""
-        # Pour l'instant, on crée des objets basiques
-        # À adapter selon vos besoins
-        if color == "yellow":
-            if room_name in Yellow.rooms:
-                return Yellow(room_name)
-        elif color == "green":
-            if room_name in Green.rooms:
-                return Green(room_name)
-        elif color == "blue":
-            if room_name in Blue.rooms:
-                return Blue(room_name)
-        elif color == "purple":
-            if room_name in Purple.rooms:
-                return Purple(room_name)
-        elif color == "red":
-            if room_name in Red.rooms:
-                return Red(room_name)
-        elif color == "orange":
-            if room_name in Orange.rooms:
-                return Orange(room_name)
-        elif color == "start":
-            return Blue("Entrance Hall")
-        elif color == "end":
-            return Blue("Antechamber")
-        else:
-            raise ValueError("Ce n'est pas une couleur valable")
+        return create_room(room_name,color)
 
     def generate_map(self):
         """Création de la carte à partir du layout avec génération des portes"""

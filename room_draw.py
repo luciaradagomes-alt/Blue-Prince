@@ -299,7 +299,7 @@ class RoomDraw:
                         inventory.gems -= rooms[choice].cost
                         waiting = False
                     else:
-                        text.afficher_message_temps("Pas assez de gemmes")
+                        text.afficher_message_temps("Pas assez de gemmes",surface)
                     if event.key == pygame.K_ESCAPE:
                         return None
 

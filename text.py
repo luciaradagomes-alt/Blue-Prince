@@ -10,6 +10,7 @@ font5 = pygame.font.SysFont('couriernew',20)
 
 room_font = pygame.font.SysFont('franklingothic',28)
 inventory_font = pygame.font.SysFont('couriernew',16)
+icon_font = pygame.font.SysFont('franklingothic',24)
 
 #font = pygame.font.get_fonts()
 #for f in font:
@@ -34,11 +35,11 @@ def ligne_texte(txt,screen,x,y,color="white",font=font1,modifier=None,marge=10,s
         La police désirée pour afficher le texte, Damned Architect par défaut
     - modifier : str (optional)
         Définit si le texte doit être affiché en gras, italique ou souligné
-    - sep : str (optional)
-        Définit le séparateur si la ligne est trop longue pour Être affiché sur 1 seule ligne, ' ' par défaut 
     - marge : int | str (optional)
         Espace qui reste à gauche du texte, 10 par défaut
         Peut aussi être 'same', qui affecte la valeur de x à la marge
+    - sep : str (optional)
+        Définit le séparateur si la ligne est trop longue pour Être affiché sur 1 seule ligne, ' ' par défaut 
     """
     if marge == 'same':
         marge = x
@@ -118,7 +119,7 @@ def texte(txt,screen,x,y,color="white",font=font1,modifiers={},marge=10,leading=
         y += nb_lignes * height + leading
 
 
-def ligne_texte_centre(txt,screen,offsetx=0,offsety=0,color="white",font=font1,modifier=None):
+def ligne_texte_centre(txt,screen,offsetx=0,offsety=0,color="white",font=font1,modifier=None,sep=" "):
     """ Ajoute à une Surface pygame une ligne de texte, par défaut centralisée.
 
     Parameters
@@ -136,10 +137,22 @@ def ligne_texte_centre(txt,screen,offsetx=0,offsety=0,color="white",font=font1,m
         La police désirée pour afficher le texte, Damned Architect par défaut
     - modifier : str (optional)
         Définit si le texte doit être affiché en gras, italique ou souligné
+    - sep : str (optional)
+        Définit le séparateur si la ligne est trop longue pour Être affiché sur 1 seule ligne, ' ' par défaut 
     """
     x = screen.get_width() / 2 - font.size(txt)[0] / 2 + offsetx
     y = screen.get_height() / 2 - font.size(txt)[1] / 2 + offsety
-    return ligne_texte(txt,screen,x,y,color,font,modifier)
+
+    if font.size(txt)[0] <= screen.get_width():
+        return ligne_texte(txt,screen,x,y,color,font,modifier)
+
+    txt_fin = ""
+    while font.size(txt)[0] > screen.get_width():
+        mots = txt.rsplit(sep,maxsplit=1)
+        txt = mots[0]
+        if len(mots) > 1:
+            txt_fin = mots[1] + sep + txt_fin
+    texte_centre([txt,txt_fin],screen,x,y,color,font,modifiers={0:modifier,1:modifier})
 
 
 def texte_centre(txt,screen,offsetx=0,offsety=0,color="white",font=font1,modifiers={}):

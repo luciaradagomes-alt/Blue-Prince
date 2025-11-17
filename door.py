@@ -67,6 +67,7 @@ class RoomNode:
         self.room = room
         self.visited = True
         self.room.enter_room()
+        self.tile.name = room.name
 
     def add_door(self, direction, door):
         """Ajoute une porte dans une direction"""

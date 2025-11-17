@@ -1,8 +1,10 @@
 import pygame
 import os
 from chambres import *
+import text
 
 pygame.display.init()
+pygame.font.init()
 
 asset_folders = {
             "start": "assets/start_rooms",
@@ -81,18 +83,27 @@ class Tile:
         elif name == "Antechamber":
             self.color = "end"
         elif name in Blue.rooms:
-            self.color = "blue"
+            self.color = "vide"
+            name = "tuile_remplie"
         elif name in Green.rooms:
-            self.color = "green"
+            self.color = "vide"
+            name = "tuile_remplie"
         elif name in Purple.rooms:
-            self.color = "purple"
+            self.color = "vide"
+            name = "tuile_remplie"
         elif name in Red.rooms:
-            self.color = "red"
+            self.color = "vide"
+            name = "tuile_remplie"
         #elif name in Yellow.rooms:
          #   self.color = "yellow"
         elif name in Orange.rooms:
-            self.color = "orange"
-        self.image = self.room_images[self.color][_clean_name(name)]  
+            self.color = "vide"
+            name = "tuile_remplie"
+        if self.color != "vide":
+            self.image = self.room_images[self.color][_clean_name(name)]
+        else:
+            self.image = self.room_images[self.color][name].copy()
+            text.ligne_texte_centre(f"{self.name}",self.image,font=text.icon_font)
 
     def _clean_name(self, name):
         """Nettoie le nom d'une salle pour correspondre aux fichiers."""

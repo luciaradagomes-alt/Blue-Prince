@@ -59,10 +59,6 @@ class RoomNode:
         self.visited = False
         self.doors = {}  # {direction: Door} où direction = 'north', 'south', 'east', 'west'
     
-    def _clean_name(self, name):
-        """Nettoie le nom d'une salle pour correspondre aux fichiers."""
-        return name.strip().replace(" ", "_").lower()
-
     def enter_room_node(self,room):
         self.room = room
         self.visited = True

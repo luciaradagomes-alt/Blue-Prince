@@ -244,9 +244,9 @@ class Inventory:
 
         text.afficher_message_temps(message,screen)
         screen.blit(screen_empty,(0,0))
-
+    """
     def buy(self,room):
-        """ Permet au joueur d'acheter un objet, sous condition qu'il ait assez de pièces
+        ''' Permet au joueur d'acheter un objet, sous condition qu'il ait assez de pièces
 
         Parameters:
         - room : Yellow
@@ -254,7 +254,7 @@ class Inventory:
 
         Raises:
         - TypeError : si on ne se trouve pas dans un marché (salle jaune) 
-        """
+        '''
         
         if self.coins < object.price:
             return ("Vous n'avez pas assez de pièces !")
@@ -266,6 +266,7 @@ class Inventory:
 
         if object.food:
             self.steps += object.steps
+    """
     
     def open_door(self,niveau):
         """ Permet au joueur d'ouvrir une porte
